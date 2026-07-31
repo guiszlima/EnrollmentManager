@@ -1,5 +1,19 @@
+# Arquivos de Build / Compilação
 bin/
 obj/
-/packages/
+
+# Arquivos locais e segredos de desenvolvimento
+appsettings.Development.json
+appsettings.Local.json
+.env
+
+# Configurações de IDEs e Cache (Rider / ReSharper)
+.idea/
+*.iml
 riderModule.iml
-/_ReSharper.Caches/
+_ReSharper.Caches/
+
+# Pacotes do NuGet
+/packages/
+*.nuget.props
+*.nuget.targets

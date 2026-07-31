@@ -1,6 +1,6 @@
-namespace EnrollmentManager.API.DTOs;
+namespace EnrollmentManager.API.DTOS;
 
-public record ApiResponse<T>(
+public record ApiResponseDTO<T>(
     bool Success,
     string? Message = null,
     T? Data = default,
@@ -8,10 +8,10 @@ public record ApiResponse<T>(
 )
 {
     // Métodos estáticos de conveniência continuam funcionando normalmente
-    public static ApiResponse<T> Ok(T data, string? message = null) 
+    public static ApiResponseDTO<T> Ok(T data, string? message = null) 
         => new(true, message, data);
 
-    public static ApiResponse<T> Fail(string message, List<string>? errors = null) 
+    public static ApiResponseDTO<T> Fail(string message, List<string>? errors = null) 
         => new(false, message, default, errors ?? [])
      ;
         
