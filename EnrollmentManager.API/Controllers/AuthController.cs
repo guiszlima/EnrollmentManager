@@ -1,5 +1,6 @@
 using EnrollmentManager.API.DTOS;
 using EnrollmentManager.API.DTOS.Auth;
+using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,11 +18,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<ApiResponseDTO<string>>> Register([FromBody] RegisterUserDTO dto)
+    public async Task<ActionResult<ApiResponseDto<string>>> Register([FromBody] RegisterUserDto dto)
     {
         var response = await _authService.RegisterAsync(dto);
 
-        if (!response.Success)
+        if (response.Errors is { Count: > 0 })
         {
             return BadRequest(response);
         }
@@ -30,11 +31,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<ApiResponseDTO<string>>> Login([FromBody] LoginUserDTO dto)
+    public async Task<ActionResult<ApiResponseDto<string>>> Login([FromBody] LoginUserDto dto)
     {
         var response = await _authService.LoginAsync(dto);
 
-        if (!response.Success)
+        if (response.Errors is { Count: > 0 })
         {
             return Unauthorized(response);
         }

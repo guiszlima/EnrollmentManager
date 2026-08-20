@@ -1,14 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EnrollmentManager.API.DTOS.Auth;
+namespace EnrollmentManager.API.DTOS;
 
-public record RegisterUserDTO(
-    [Required(ErrorMessage = "O nome de usuário é obrigatório.")]
-    string UserName,
+public record LoginUserDto(
     [Required(ErrorMessage = "O e-mail é obrigatório.")]
     [EmailAddress(ErrorMessage = "Formato de e-mail inválido.")]
     string Email,
     [Required(ErrorMessage = "A senha é obrigatória.")]
-    [MinLength(6, ErrorMessage = "A senha deve ter pelo menos 6 caracteres.")]
     string Password
 );

@@ -1,5 +1,7 @@
 using EnrollmentManager.API.Models;
 using EnrollmentManager.API.Services.Auth;
+using EnrollmentManager.API.Services.Email;
+using EnrollmentManager.API.Services.Interfaces;
 using EnrollmentManager.API.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Identity;
 
@@ -16,6 +18,10 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ITokenService, TokenService>();
 
+        services.AddScoped<IPasswordResetService, PasswordResetService>();
+
+        services.AddScoped<IEmailService, EmailService>();
+        
         return services;
     }
 }

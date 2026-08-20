@@ -1,0 +1,341 @@
+Roles: Quem pode fazer o quê no sistema.
+
+Users: Quem consegue logar no sistema.
+
+Students: Ficha cadastral do aluno.
+
+PasswordResetTokens: Tokens temporários usados para redefinir a senha de um usuário.
+
+CourseTypes: Bacharelado, Tecnólogo, etc.
+
+EducationLevels: Graduação, Pós, etc.
+
+CourseStatuses: Se o curso está ativo ou descontinuado.
+
+Courses: O curso em si (ex: Ciência da Computação).
+
+EnrollmentFormats: Presencial, EAD, Híbrido, etc.
+
+CourseEnrollmentFormats: Quais formatos cada curso aceita, Presencial, EAD, Híbrido, etc.
+
+EnrollmentStatuses: Pendente, Ativo, Trancado, etc.
+
+Enrollments: O registro final de que o Aluno X está cursando o Curso Y na Modalidade Z.
+
+
+============================================================
+Enrollment Manager - Guia dos modelos do banco de dados
+============================================================
+
+Este arquivo documenta as classes da pasta EnrollmentManager.API/Models.
+Os atributos [Key], [Required], [MaxLength] e [ForeignKey] indicam regras
+de validacao e relacionamento. Regras adicionais podem estar definidas nas
+configuracoes do Entity Framework Core em Data/Configurations.
+
+
+1. AUTENTICACAO E USUARIOS
+--------------------------
+
+Role
+		Representa um perfil de acesso do sistema.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome do perfil, obrigatorio, com ate 50 caracteres.
+
+		Relacionamentos:
+		- Uma Role possui varios Users.
+		- User.RoleId referencia Role.Id.
+
+		Exemplos:
+		- Admin: pode executar operacoes administrativas.
+		- Student: perfil de aluno.
+
+
+User
+		Representa uma conta que pode acessar o sistema.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- UserName: nome de usuario, obrigatorio, com ate 100 caracteres.
+		- PasswordHash: senha armazenada como hash, obrigatoria, com ate 100
+			caracteres. A senha original nao deve ser armazenada.
+		- Email: e-mail do usuario, obrigatorio, com ate 150 caracteres.
+		- RoleId: chave estrangeira para Role.
+		- IsActive: indica se a conta esta ativa e pode ser aprovada para uso.
+
+		Regras:
+		- Email possui indice unico. Dois usuarios nao podem usar o mesmo
+			endereco de e-mail.
+
+		Relacionamentos:
+		- Um User pertence a uma Role.
+		- Um User pode possuir varios PasswordResetTokens.
+		- Um User pode possuir um Student, usando Student.UserId como chave
+			primaria e estrangeira.
+
+
+Student
+		Armazena os dados cadastrais do aluno. O aluno e uma extensao da conta
+		User, e nao possui um Id separado.
+
+		Campos:
+		- UserId: chave primaria e chave estrangeira para User.Id.
+		- Cpf: opcional, com ate 14 caracteres.
+		- PassportNumber: opcional, com ate 50 caracteres; usado para alunos
+			internacionais.
+		- Nationality: opcional, com ate 50 caracteres.
+		- BirthDate: data de nascimento.
+		- Phone: telefone, com ate 20 caracteres.
+		- Address: endereco, com ate 200 caracteres.
+		- RegistrationNumber: numero de matricula, obrigatorio, com ate 50
+			caracteres.
+
+		Relacionamentos:
+		- Student.User referencia a conta User correspondente.
+		- Um Student pode possuir varias Enrollment.
+
+
+PasswordResetToken
+		Representa um token de redefinicao de senha enviado por e-mail.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- UserId: chave estrangeira para User.
+		- TokenHash: hash SHA-256 do token. O token original nao e salvo no
+			banco.
+		- ExpiresAt: data e hora limite para uso do token.
+		- UsedAt: data e hora em que o token foi consumido; nulo significa que
+			ainda nao foi usado.
+
+		Regras de uso:
+		- Um token so e valido quando UsedAt e nulo e ExpiresAt ainda esta no
+			futuro.
+		- Ao redefinir a senha, o token usado recebe UsedAt.
+		- Tokens ativos anteriores do mesmo usuario sao invalidados quando um
+			novo reset e solicitado ou concluido.
+		- Tokens de outros usuarios nao devem ser invalidados.
+
+
+2. CATALOGOS DE CURSOS
+----------------------
+
+CourseType
+		Classifica o tipo do curso.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome do tipo, obrigatorio, com ate 50 caracteres.
+
+		Relacionamentos:
+		- Um CourseType pode ser usado por varios Course.
+		- Course.CourseTypeId referencia CourseType.Id.
+
+		Exemplos:
+		- Bacharelado.
+		- Tecnologo.
+		- Licenciatura.
+
+
+EducationLevel
+		Representa o nivel educacional do curso.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome do nivel, obrigatorio, com ate 50 caracteres.
+
+		Relacionamentos:
+		- Um EducationLevel pode classificar varios Course.
+		- Course.EducationLevelId referencia EducationLevel.Id.
+
+		Exemplos:
+		- Graduacao.
+		- Pos-graduacao.
+		- Tecnico.
+
+
+CourseStatus
+		Indica a situacao atual de um curso.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome do status, obrigatorio, com ate 50 caracteres.
+		- Code: codigo do status, obrigatorio, com ate 30 caracteres.
+		- Description: descricao opcional, com ate 200 caracteres.
+
+		Regras:
+		- Code possui indice unico.
+
+		Relacionamentos:
+		- Um CourseStatus pode estar associado a varios Course.
+		- Course.CourseStatusId referencia CourseStatus.Id.
+
+		Exemplos:
+		- Ativo.
+		- Descontinuado.
+
+
+StudyFormat
+		Representa a modalidade em que um curso ou matricula pode ocorrer.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome da modalidade, obrigatorio, com ate 50 caracteres.
+
+		Relacionamentos:
+		- Uma StudyFormat pode ser usada em varias Enrollment.
+		- Uma StudyFormat pode ser aceita por varios Course por meio de
+			CourseStudyFormat.
+
+		Exemplos:
+		- Presencial.
+		- EAD.
+		- Hibrido.
+		- Internacional.
+
+
+Course
+		Representa o curso oferecido pela instituicao.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome do curso, obrigatorio, com ate 100 caracteres.
+		- CourseTypeId: chave estrangeira para CourseType.
+		- EducationLevelId: chave estrangeira para EducationLevel.
+		- CourseStatusId: chave estrangeira para CourseStatus.
+		- AllowedFormats: formatos aceitos pelo curso, representados pela
+			tabela de associacao CourseStudyFormat.
+
+		Relacionamentos:
+		- Um Course pertence a um CourseType.
+		- Um Course pertence a um EducationLevel.
+		- Um Course possui um CourseStatus.
+		- Um Course pode aceitar varias StudyFormat.
+		- Um Course pode possuir varias Enrollment.
+
+
+CourseStudyFormat
+		Entidade de associacao entre Course e StudyFormat. Indica quais
+		modalidades sao permitidas para cada curso.
+
+		Campos:
+		- CourseId: chave estrangeira para Course.
+		- FormatId: chave estrangeira para StudyFormat.
+		- Course: curso relacionado.
+		- Format: modalidade relacionada.
+
+		Chave:
+		- A chave primaria e composta por CourseId + FormatId.
+		- Essa configuracao e definida em ApplicationDbContext.OnModelCreating.
+		- A mesma modalidade nao deve ser cadastrada duas vezes para o mesmo
+			curso.
+
+
+3. MATRICULAS
+------------
+
+Enrollment
+		Representa a matricula de um aluno em um curso e uma modalidade.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- StudentId: chave estrangeira para Student.
+		- CourseId: chave estrangeira para Course.
+		- StatusId: chave estrangeira para EnrollmentStatus.
+		- FormatId: chave estrangeira para StudyFormat.
+		- EnrollmentDate: data da matricula, preenchida por padrao com
+			DateTime.UtcNow.
+		- CompletionDate: data de conclusao, opcional.
+
+		Relacionamentos:
+		- Uma Enrollment pertence a um Student.
+		- Uma Enrollment pertence a um Course.
+		- Uma Enrollment possui um EnrollmentStatus.
+		- Uma Enrollment possui uma StudyFormat.
+
+		Exemplo conceitual:
+		- Student A matriculado no Course B, no formato EAD, com status Pendente.
+
+
+EnrollmentStatus
+		Representa a situacao de uma matricula.
+
+		Campos:
+		- Id: chave primaria inteira.
+		- Name: nome do status, obrigatorio, com ate 50 caracteres.
+		- Code: codigo do status, obrigatorio, com ate 30 caracteres.
+		- Description: descricao opcional, com ate 200 caracteres.
+
+		Regras:
+		- Code possui indice unico.
+
+		Relacionamentos:
+		- Um EnrollmentStatus pode ser usado por varias Enrollment.
+		- Enrollment.StatusId referencia EnrollmentStatus.Id.
+
+		Exemplos:
+		- Pendente.
+		- Ativo.
+		- Trancado.
+		- Concluido.
+		- Cancelado.
+
+
+4. MAPA RESUMIDO DOS RELACIONAMENTOS
+------------------------------------
+
+Role 1 ----- N User
+User 1 ----- 1 Student
+User 1 ----- N PasswordResetToken
+Student 1 ----- N Enrollment
+CourseType 1 ----- N Course
+EducationLevel 1 ----- N Course
+CourseStatus 1 ----- N Course
+Course 1 ----- N Enrollment
+EnrollmentStatus 1 ----- N Enrollment
+StudyFormat 1 ----- N Enrollment
+Course N ----- N StudyFormat
+						atraves de CourseStudyFormat
+
+
+5. RESUMO DAS CHAVES E INDICES
+------------------------------
+
+Chaves primarias simples:
+- Role.Id
+- User.Id
+- PasswordResetToken.Id
+- CourseType.Id
+- EducationLevel.Id
+- CourseStatus.Id
+- StudyFormat.Id
+- Course.Id
+- Student.UserId
+- Enrollment.Id
+- EnrollmentStatus.Id
+
+Chave primaria composta:
+- CourseStudyFormat.CourseId + CourseStudyFormat.FormatId
+
+Indices unicos:
+- User.Email
+- CourseStatus.Code
+- EnrollmentStatus.Code
+
+
+6. OBSERVACOES DE IMPLEMENTACAO
+-------------------------------
+
+- Os campos marcados como [Required] devem ser preenchidos antes da
+	persistencia.
+- [MaxLength] limita o tamanho das strings no modelo e no banco, conforme a
+	configuracao aplicada pelo Entity Framework Core.
+- As propriedades de navegacao terminadas com = null! sao preenchidas pelo
+	Entity Framework Core quando o relacionamento e carregado.
+- ICollection representa o lado "muitos" dos relacionamentos.
+- A entidade Enrollment usa CourseId, portanto os dados de tipo e nivel do
+	curso devem ser obtidos a partir do Course relacionado.
+- Student.UserId e simultaneamente sua chave primaria e sua chave estrangeira;
+	isso caracteriza uma extensao 1:1 de User.
+- CourseStudyFormat e uma tabela de juncao e tem sua chave composta definida
+	no ApplicationDbContext.

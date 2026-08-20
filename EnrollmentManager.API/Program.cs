@@ -30,7 +30,7 @@ public class Program
             app.UseSwaggerUI(options =>
             {
                 
-                options.SwaggerEndpoint("/openapi/v1.json", "Minha API v1");
+                options.SwaggerEndpoint("/openapi/v1.json", "Enrollment Manager API v1");
             });
         }
 
