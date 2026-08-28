@@ -23,7 +23,7 @@ public class TokenService : ITokenService
         
         // Lê a chave secreta definida no appsettings.json
         var secretKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found in configuration.");
-        var key = Encoding.ASCII.GetBytes(secretKey);
+        var key = Encoding.UTF8.GetBytes(secretKey);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

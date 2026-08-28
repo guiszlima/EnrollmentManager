@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EnrollmentManager.API.DTOS.Auth;
+namespace EnrollmentManager.API.DTOs.Auth;
 
 public record ForgotPasswordDto(
     [Required(ErrorMessage = "O e-mail é obrigatório.")]

@@ -1,6 +1,6 @@
 namespace EnrollmentManager.API.DTOs.Course;
 
-public record CourseResponseDTO
+public record CourseResponseDto
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;

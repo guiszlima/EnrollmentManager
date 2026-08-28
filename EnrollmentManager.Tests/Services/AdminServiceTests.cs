@@ -1,6 +1,6 @@
 using EnrollmentManager.API.Data;
-using EnrollmentManager.API.Dtos.User;
-using EnrollmentManager.API.DTOS.Admin;
+using EnrollmentManager.API.DTOs.User;
+using EnrollmentManager.API.DTOs.Admin;
 using EnrollmentManager.API.Models;
 using EnrollmentManager.API.Services.Admin;
 using FluentAssertions;

@@ -13,7 +13,8 @@ namespace EnrollmentManager.API.Data.Configurations
             // O Seed fica aqui dentro, organizadinho!
             builder.HasData(
                 new Role { Id = 1, Name = "Admin" },
-                new Role { Id = 2, Name = "Student" }
+                new Role { Id = 2, Name = "Secretary" },
+                new Role { Id = 3, Name = "Student" }
             );
         }
     }

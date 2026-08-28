@@ -1,4 +1,4 @@
-namespace EnrollmentManager.API.DTOS.Role;
+namespace EnrollmentManager.API.DTOs.Role;
 
 public class RoleResponseDto
 {

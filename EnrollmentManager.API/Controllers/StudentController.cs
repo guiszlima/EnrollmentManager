@@ -1,5 +1,5 @@
 using EnrollmentManager.API.DTOs.Common;
-using EnrollmentManager.API.DTOS.Student;
+using EnrollmentManager.API.DTOs.Student;
 using EnrollmentManager.API.Services.Interfaces.Student;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -20,19 +20,19 @@ public class StudentController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponseDto<List<StudentResponseDTO>>>> GetAll()
+    public async Task<ActionResult<ApiResponseDto<List<StudentResponseDto>>>> GetAll()
     {
         if (!User.IsInRole("Admin"))
             return Forbid();
 
-        return Ok(new ApiResponseDto<List<StudentResponseDTO>>
+        return Ok(new ApiResponseDto<List<StudentResponseDto>>
         {
             Data = await _service.GetAllAsync()
         });
     }
 
     [HttpGet("{userId:int}")]
-    public async Task<ActionResult<ApiResponseDto<StudentResponseDTO>>> GetById(int userId)
+    public async Task<ActionResult<ApiResponseDto<StudentResponseDto>>> GetById(int userId)
     {
         if (!CanAccessStudent(userId))
             return Forbid();
@@ -40,58 +40,49 @@ public class StudentController : ControllerBase
         var student = await _service.GetByIdAsync(userId);
 
         if (student is null)
-            return NotFound(ApiResponseDto<StudentResponseDTO>.Error("Aluno não encontrado."));
+            return NotFound(ApiResponseDto<StudentResponseDto>.Error("Aluno não encontrado."));
 
-        return Ok(new ApiResponseDto<StudentResponseDTO> { Data = student });
+        return Ok(new ApiResponseDto<StudentResponseDto> { Data = student });
     }
 
     [HttpPost]
-    public async Task<ActionResult<ApiResponseDto<StudentResponseDTO>>> Create(StudentCreateDTO dto)
+    public async Task<ActionResult<ApiResponseDto<StudentResponseDto>>> Create(StudentCreateDto dto)
     {
         if (!User.IsInRole("Admin"))
             return Forbid();
 
-        var student = await _service.CreateAsync(dto);
+        var response = await _service.CreateAsync(dto);
 
-        if (student is null)
-            return Conflict(ApiResponseDto<StudentResponseDTO>.Error(
-                "Usuário inexistente, aluno já cadastrado ou dados duplicados."));
+        // Se Data vier nulo (ou !response.Success caso você tenha a propriedade booleana)
+        if (response.Data is null)
+            return BadRequest(response); // Retorna 400 com a mensagem formatada pelo Serviço
 
         return CreatedAtAction(
             nameof(GetById),
-            new { userId = student.UserId },
-            new ApiResponseDto<StudentResponseDTO>
-            {
-                Data = student,
-                Message = "Aluno cadastrado com sucesso."
-            });
+            new { userId = response.Data.UserId },
+            response);
     }
 
     [HttpPut("{userId:int}")]
-    public async Task<ActionResult<ApiResponseDto<StudentResponseDTO>>> Update(
+    public async Task<ActionResult<ApiResponseDto<StudentResponseDto>>> Update(
         int userId,
-        StudentUpdateDTO dto)
+        StudentUpdateDto dto)
     {
         if (!CanAccessStudent(userId))
             return Forbid();
 
-        var student = await _service.UpdateAsync(userId, dto);
+        var response = await _service.UpdateAsync(userId, dto);
 
-        if (student is null)
+        if (response.Data is null)
         {
-            var existing = await _service.GetByIdAsync(userId);
-
-            if (existing is null)
-                return NotFound(ApiResponseDto<StudentResponseDTO>.Error("Aluno não encontrado."));
-
-            return Conflict(ApiResponseDto<StudentResponseDTO>.Error("Já existe um aluno com esses dados."));
+            // Se a mensagem indicar que não encontrou, devolvemos 404. Caso contrário, 400.
+            if (response.Message?.Contains("não encontrado") == true)
+                return NotFound(response);
+            
+            return BadRequest(response);
         }
 
-        return Ok(new ApiResponseDto<StudentResponseDTO>
-        {
-            Data = student,
-            Message = "Aluno atualizado com sucesso."
-        });
+        return Ok(response);
     }
 
     [HttpDelete("{userId:int}")]
@@ -100,14 +91,17 @@ public class StudentController : ControllerBase
         if (!User.IsInRole("Admin"))
             return Forbid();
 
-        if (!await _service.DeleteAsync(userId))
-            return NotFound(ApiResponseDto<bool>.Error("Aluno não encontrado."));
+        var response = await _service.DeleteAsync(userId);
 
-        return Ok(new ApiResponseDto<bool>
+        if (response.Data is false) // Falhou na validação de exclusão ou não encontrado
         {
-            Data = true,
-            Message = "Aluno removido com sucesso."
-        });
+            if (response.Message?.Contains("não encontrado") == true)
+                return NotFound(response);
+
+            return BadRequest(response);
+        }
+
+        return Ok(response);
     }
 
     private bool CanAccessStudent(int userId) =>

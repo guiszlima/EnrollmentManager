@@ -4,18 +4,26 @@ using EnrollmentManager.API.Models;
 using EnrollmentManager.API.Services.Enrollments;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EnrollmentManager.Tests.Services;
 
 public class EnrollmentServiceTests
 {
+    // Helper privado para instanciar o serviço com NullLogger
+    private static EnrollmentService CreateService(ApplicationDbContext context)
+    {
+        return new EnrollmentService(context, NullLogger<EnrollmentService>.Instance);
+    }
+
     [Fact]
     public async Task CreateAsync_Should_Create_Pending_Enrollment_Without_Client_Status()
     {
         await using var context = CreateContext();
         await SeedAsync(context);
 
-        var result = await new EnrollmentService(context).CreateAsync(new EnrollmentCreateDTO
+        var service = CreateService(context);
+        var result = await service.CreateAsync(new EnrollmentCreateDTO
         {
             StudentId = 1, CourseId = 1, FormatId = 1
         });
@@ -26,12 +34,30 @@ public class EnrollmentServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_Should_Reject_Duplicate_Active_Or_Pending_Enrollment()
+    {
+        await using var context = CreateContext();
+        await SeedAsync(context);
+        var service = CreateService(context);
+
+        // Primeira matrícula cria pendente com sucesso
+        await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+
+        // Segunda tentativa deve falhar
+        var result = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+
+        result.Errors.Should().ContainSingle()
+            .Which.Should().Be("Você já possui uma matrícula ativa ou pendente para este curso e modalidade.");
+    }
+
+    [Fact]
     public async Task CreateAsync_Should_Reject_Discontinued_Course()
     {
         await using var context = CreateContext();
         await SeedAsync(context, courseCode: "DISCONTINUED");
 
-        var result = await new EnrollmentService(context).CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+        var service = CreateService(context);
+        var result = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
 
         result.Errors.Should().ContainSingle().Which.Should().Be("Curso não está disponível para novas matrículas.");
     }
@@ -42,7 +68,8 @@ public class EnrollmentServiceTests
         await using var context = CreateContext();
         await SeedAsync(context, userActive: false);
 
-        var result = await new EnrollmentService(context).CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+        var service = CreateService(context);
+        var result = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
 
         result.Errors.Should().ContainSingle().Which.Should().Be("Usuário do aluno está inativo.");
     }
@@ -53,9 +80,39 @@ public class EnrollmentServiceTests
         await using var context = CreateContext();
         await SeedAsync(context, addCourseFormat: false);
 
-        var result = await new EnrollmentService(context).CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+        var service = CreateService(context);
+        var result = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
 
-        result.Errors.Should().ContainSingle().Which.Should().Be("A modalidade não é aceita pelo curso.");
+        result.Errors.Should().ContainSingle().Which.Should().Be("A modalidade informada não é aceita por este curso ou não existe.");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_Should_Return_Enrollment_When_Exists()
+    {
+        await using var context = CreateContext();
+        await SeedAsync(context);
+        var service = CreateService(context);
+        var created = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+
+        var result = await service.GetByIdAsync(created.Data!.Id);
+
+        result.Errors.Should().BeEmpty();
+        result.Data.Should().NotBeNull();
+        result.Data!.StudentId.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetByStudentAsync_Should_Return_List_Of_Enrollments()
+    {
+        await using var context = CreateContext();
+        await SeedAsync(context);
+        var service = CreateService(context);
+        await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
+
+        var result = await service.GetByStudentAsync(1);
+
+        result.Errors.Should().BeEmpty();
+        result.Data.Should().HaveCount(1);
     }
 
     [Fact]
@@ -63,7 +120,7 @@ public class EnrollmentServiceTests
     {
         await using var context = CreateContext();
         await SeedAsync(context);
-        var service = new EnrollmentService(context);
+        var service = CreateService(context);
         var created = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
 
         var approved = await service.ChangeStatusAsync(created.Data!.Id, new EnrollmentStatusChangeDto { StatusId = 2 });
@@ -81,7 +138,7 @@ public class EnrollmentServiceTests
     {
         await using var context = CreateContext();
         await SeedAsync(context);
-        var service = new EnrollmentService(context);
+        var service = CreateService(context);
         var created = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
 
         var result = await service.ChangeStatusAsync(created.Data!.Id, new EnrollmentStatusChangeDto { StatusId = 5 });
@@ -94,7 +151,7 @@ public class EnrollmentServiceTests
     {
         await using var context = CreateContext();
         await SeedAsync(context);
-        var service = new EnrollmentService(context);
+        var service = CreateService(context);
         var first = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });
         await service.ChangeStatusAsync(first.Data!.Id, new EnrollmentStatusChangeDto { StatusId = 4 });
         var second = await service.CreateAsync(new EnrollmentCreateDTO { StudentId = 1, CourseId = 1, FormatId = 1 });

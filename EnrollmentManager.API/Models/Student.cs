@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace EnrollmentManager.API.Models;
 
 [Index(nameof(RegistrationNumber), IsUnique = true)]
+[Index(nameof(Cpf), IsUnique = true)]
+[Index(nameof(PassportNumber), IsUnique = true)]
 public class Student
 {
     [Key, ForeignKey("User")]

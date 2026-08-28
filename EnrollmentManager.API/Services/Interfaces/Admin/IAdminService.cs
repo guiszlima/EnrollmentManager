@@ -1,6 +1,6 @@
 using EnrollmentManager.API.DTOs.Common;
-using EnrollmentManager.API.Dtos.User;
-using EnrollmentManager.API.DTOS.Admin;
+using EnrollmentManager.API.DTOs.User;
+using EnrollmentManager.API.DTOs.Admin;
 
 namespace EnrollmentManager.API.Services.Admin;
 

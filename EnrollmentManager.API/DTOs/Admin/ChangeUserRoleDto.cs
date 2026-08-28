@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EnrollmentManager.API.Dtos.User;
+namespace EnrollmentManager.API.DTOs.User;
 
 public record ChangeUserRoleDto
 {

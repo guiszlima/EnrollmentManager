@@ -1,5 +1,4 @@
-using EnrollmentManager.API.DTOS;
-using EnrollmentManager.API.DTOS.Auth;
+using EnrollmentManager.API.DTOs.Auth;
 using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Mvc;

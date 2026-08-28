@@ -4,9 +4,9 @@ namespace EnrollmentManager.API.Services.Interfaces.Course;
 
 public interface ICourseService
 {
-    Task<List<CourseResponseDTO>> GetAllAsync();
-    Task<CourseResponseDTO?> GetByIdAsync(int id);
-    Task<CourseResponseDTO?> CreateAsync(CourseInputDTO dto);
-    Task<CourseResponseDTO?> UpdateAsync(int id, CourseInputDTO dto);
+    Task<List<CourseResponseDto>> GetAllAsync();
+    Task<CourseResponseDto?> GetByIdAsync(int id);
+    Task<CourseResponseDto?> CreateAsync(CourseInputDto dto);
+    Task<CourseResponseDto?> UpdateAsync(int id, CourseInputDto dto);
     Task<bool> DeleteAsync(int id);
 }

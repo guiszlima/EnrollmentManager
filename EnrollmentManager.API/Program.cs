@@ -25,48 +25,7 @@ public class Program
         builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
         builder.Services.AddControllers();
         builder.Services.AddApplicationSettings(builder.Configuration);
-        builder.Services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                var jwt = builder.Configuration.GetSection("Jwt");
-                var key = jwt["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
-
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-                    ValidateIssuer = true,
-                    ValidIssuer = jwt["Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = jwt["Audience"],
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnTokenValidated = async context =>
-                    {
-                        var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-                        if (!int.TryParse(userIdValue, out var userId))
-                        {
-                            context.Fail("acesso não autorizado");
-                            return;
-                        }
-
-                        var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
-                        if (!await db.Users.AsNoTracking().AnyAsync(user => user.Id == userId && user.IsActive))
-                            context.Fail("acesso não autorizado");
-                    },
-                    OnChallenge = context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                        return context.Response.WriteAsJsonAsync(ApiResponseDto<bool>.Error("acesso não autorizado"));
-                    }
-                };
-            });
+        builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddAuthorization();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi(options =>

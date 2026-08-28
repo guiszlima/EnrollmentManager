@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EnrollmentManager.API.DTOS.Auth;
+namespace EnrollmentManager.API.DTOs.Auth;
 
 public record ResetPasswordDto(
     [Required(ErrorMessage = "O token é obrigatório.")]

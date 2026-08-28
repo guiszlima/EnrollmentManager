@@ -1,16 +1,13 @@
-using EnrollmentManager.API.DTOS.Student;
+using EnrollmentManager.API.DTOs.Common;
+using EnrollmentManager.API.DTOs.Student;
 
 namespace EnrollmentManager.API.Services.Interfaces.Student;
 
 public interface IStudentService
 {
-    Task<List<StudentResponseDTO>> GetAllAsync();
-
-    Task<StudentResponseDTO?> GetByIdAsync(int userId);
-
-    Task<StudentResponseDTO?> CreateAsync(StudentCreateDTO dto);
-
-    Task<StudentResponseDTO?> UpdateAsync(int userId, StudentUpdateDTO dto);
-
-    Task<bool> DeleteAsync(int userId);
+    Task<List<StudentResponseDto>> GetAllAsync();
+    Task<StudentResponseDto?> GetByIdAsync(int userId);
+    Task<ApiResponseDto<StudentResponseDto>> CreateAsync(StudentCreateDto dto);
+    Task<ApiResponseDto<StudentResponseDto>> UpdateAsync(int userId, StudentUpdateDto dto);
+    Task<ApiResponseDto<bool>> DeleteAsync(int userId);
 }

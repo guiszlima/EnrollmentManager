@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using EnrollmentManager.API.Configurations;
 using EnrollmentManager.API.Data;
 using EnrollmentManager.API.DTOs.Common;
-using EnrollmentManager.API.DTOS.Auth;
+using EnrollmentManager.API.DTOs.Auth;
 using EnrollmentManager.API.Models;
 using EnrollmentManager.API.Services.Interfaces;
 using EnrollmentManager.API.Services.Interfaces.Auth;

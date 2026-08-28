@@ -1,7 +1,7 @@
 
 using EnrollmentManager.API.Data;
-using EnrollmentManager.API.DTOS;          
-using EnrollmentManager.API.DTOS.Auth;     
+using EnrollmentManager.API.DTOs;          
+using EnrollmentManager.API.DTOs.Auth;     
 using EnrollmentManager.API.Models;
 using EnrollmentManager.API.Services.Auth;
 using EnrollmentManager.API.Services.Interfaces.Auth;

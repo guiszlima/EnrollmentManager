@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EnrollmentManager.API.DTOS.Student;
+namespace EnrollmentManager.API.DTOs.Student;
 
-public class StudentUpdateDTO
+public class StudentUpdateDto
 {
     [StringLength(14, MinimumLength = 11, ErrorMessage = "O CPF deve ter entre 11 e 14 caracteres.")]
     public string? Cpf { get; init; }

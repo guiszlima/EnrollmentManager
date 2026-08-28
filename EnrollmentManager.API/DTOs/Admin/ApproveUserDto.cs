@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace EnrollmentManager.API.DTOS.Admin
+namespace EnrollmentManager.API.DTOs.Admin
 {
     public class ApproveUserDto
     {

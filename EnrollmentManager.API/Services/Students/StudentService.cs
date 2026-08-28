@@ -1,5 +1,6 @@
 using EnrollmentManager.API.Data;
-using EnrollmentManager.API.DTOS.Student;
+using EnrollmentManager.API.DTOs.Common;
+using EnrollmentManager.API.DTOs.Student;
 using EnrollmentManager.API.Models;
 using EnrollmentManager.API.Services.Interfaces.Student;
 using Microsoft.EntityFrameworkCore;
@@ -15,11 +16,11 @@ public class StudentService : IStudentService
         _context = context;
     }
 
-    public async Task<List<StudentResponseDTO>> GetAllAsync()
+    public async Task<List<StudentResponseDto>> GetAllAsync()
     {
         return await _context.Students
             .AsNoTracking()
-            .Select(student => new StudentResponseDTO
+            .Select(student => new StudentResponseDto
             {
                 UserId = student.UserId,
                 UserName = student.User.UserName,
@@ -35,12 +36,12 @@ public class StudentService : IStudentService
             .ToListAsync();
     }
 
-    public async Task<StudentResponseDTO?> GetByIdAsync(int userId)
+    public async Task<StudentResponseDto?> GetByIdAsync(int userId)
     {
         return await _context.Students
             .AsNoTracking()
             .Where(student => student.UserId == userId)
-            .Select(student => new StudentResponseDTO
+            .Select(student => new StudentResponseDto
             {
                 UserId = student.UserId,
                 UserName = student.User.UserName,
@@ -56,25 +57,31 @@ public class StudentService : IStudentService
             .FirstOrDefaultAsync();
     }
 
-    public async Task<StudentResponseDTO?> CreateAsync(StudentCreateDTO dto)
+    public async Task<ApiResponseDto<StudentResponseDto>> CreateAsync(StudentCreateDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Cpf) && string.IsNullOrWhiteSpace(dto.PassportNumber))
-            return null;
+        if (!ValidateNationalityAndDocuments(dto.Nationality, dto.Cpf, dto.PassportNumber))
+            return ApiResponseDto<StudentResponseDto>.Error("Documento de identificação inválido para a nacionalidade informada.");
 
-        bool userExists = await _context.Users
-            .AnyAsync(user => user.Id == dto.UserId);
+        bool userExists = await _context.Users.AnyAsync(user => user.Id == dto.UserId);
+        if (!userExists)
+            return ApiResponseDto<StudentResponseDto>.Error("Usuário não encontrado no sistema.");
 
-        if (!userExists || await _context.Students.AnyAsync(student => student.UserId == dto.UserId))
-            return null;
+        bool hasStudentProfile = await _context.Students.AnyAsync(student => student.UserId == dto.UserId);
+        if (hasStudentProfile)
+            return ApiResponseDto<StudentResponseDto>.Error("Este usuário já possui um perfil de aluno cadastrado.");
 
-        if (await HasDuplicateDocumentOrRegistrationAsync(dto.Cpf, dto.PassportNumber, dto.RegistrationNumber))
-            return null;
+        bool isBr = IsBrazilian(dto.Nationality);
+        string? cleanCpf = isBr ? dto.Cpf : null;
+        string? cleanPassport = isBr ? null : dto.PassportNumber;
 
-        var student = new Student
+        if (await HasDuplicateDocumentOrRegistrationAsync(cleanCpf, cleanPassport, dto.RegistrationNumber))
+            return ApiResponseDto<StudentResponseDto>.Error("Já existe um aluno cadastrado com esta Matrícula, CPF ou Passaporte.");
+
+        var student = new EnrollmentManager.API.Models.Student
         {
             UserId = dto.UserId,
-            Cpf = dto.Cpf,
-            PassportNumber = dto.PassportNumber,
+            Cpf = cleanCpf,
+            PassportNumber = cleanPassport,
             Nationality = dto.Nationality,
             BirthDate = dto.BirthDate,
             Phone = dto.Phone,
@@ -89,32 +96,38 @@ public class StudentService : IStudentService
         }
         catch (DbUpdateException)
         {
-            return null;
+            return ApiResponseDto<StudentResponseDto>.Error("Erro inesperado ao salvar os dados do aluno.");
         }
 
-        return await GetByIdAsync(student.UserId);
+        var resultDto = await GetByIdAsync(student.UserId);
+        return new ApiResponseDto<StudentResponseDto> 
+        { 
+            Data = resultDto, 
+            Message = "Aluno cadastrado com sucesso." 
+        };
     }
 
-    public async Task<StudentResponseDTO?> UpdateAsync(int userId, StudentUpdateDTO dto)
+    public async Task<ApiResponseDto<StudentResponseDto>> UpdateAsync(int userId, StudentUpdateDto dto)
     {
         var student = await _context.Students
+            .Include(s => s.User)
             .FirstOrDefaultAsync(current => current.UserId == userId);
 
         if (student is null)
-            return null;
+            return ApiResponseDto<StudentResponseDto>.Error("Aluno não encontrado.");
 
-        if (string.IsNullOrWhiteSpace(dto.Cpf) && string.IsNullOrWhiteSpace(dto.PassportNumber))
-            return null;
+        if (!ValidateNationalityAndDocuments(dto.Nationality, dto.Cpf, dto.PassportNumber))
+            return ApiResponseDto<StudentResponseDto>.Error("Documento de identificação inválido para a nacionalidade informada.");
 
-        if (await HasDuplicateDocumentOrRegistrationAsync(
-                dto.Cpf,
-                dto.PassportNumber,
-                dto.RegistrationNumber,
-                userId))
-            return null;
+        bool isBr = IsBrazilian(dto.Nationality);
+        string? cleanCpf = isBr ? dto.Cpf : null;
+        string? cleanPassport = isBr ? null : dto.PassportNumber;
 
-        student.Cpf = dto.Cpf;
-        student.PassportNumber = dto.PassportNumber;
+        if (await HasDuplicateDocumentOrRegistrationAsync(cleanCpf, cleanPassport, dto.RegistrationNumber, userId))
+            return ApiResponseDto<StudentResponseDto>.Error("Já existe outro aluno cadastrado com esta Matrícula, CPF ou Passaporte.");
+
+        student.Cpf = cleanCpf;
+        student.PassportNumber = cleanPassport;
         student.Nationality = dto.Nationality;
         student.BirthDate = dto.BirthDate;
         student.Phone = dto.Phone;
@@ -127,27 +140,37 @@ public class StudentService : IStudentService
         }
         catch (DbUpdateException)
         {
-            return null;
+            return ApiResponseDto<StudentResponseDto>.Error("Erro inesperado ao atualizar os dados do aluno.");
         }
 
-        return await GetByIdAsync(student.UserId);
+        var resultDto = await GetByIdAsync(student.UserId);
+        return new ApiResponseDto<StudentResponseDto> 
+        { 
+            Data = resultDto, 
+            Message = "Aluno atualizado com sucesso." 
+        };
     }
 
-    public async Task<bool> DeleteAsync(int userId)
+    public async Task<ApiResponseDto<bool>> DeleteAsync(int userId)
     {
         var student = await _context.Students
             .FirstOrDefaultAsync(current => current.UserId == userId);
 
         if (student is null)
-            return false;
+            return ApiResponseDto<bool>.Error("Aluno não encontrado.");
 
-        if (await _context.Enrollments.AnyAsync(enrollment => enrollment.StudentId == userId))
-            return false;
+        bool hasEnrollments = await _context.Enrollments.AnyAsync(enrollment => enrollment.StudentId == userId);
+        if (hasEnrollments)
+            return ApiResponseDto<bool>.Error("Não é possível remover o aluno, pois existem matrículas ativas vinculadas a ele.");
 
         _context.Students.Remove(student);
         await _context.SaveChangesAsync();
 
-        return true;
+        return new ApiResponseDto<bool> 
+        { 
+            Data = true, 
+            Message = "Aluno removido com sucesso." 
+        };
     }
 
     private async Task<bool> HasDuplicateDocumentOrRegistrationAsync(
@@ -156,11 +179,28 @@ public class StudentService : IStudentService
         string registrationNumber,
         int? userId = null)
     {
+        bool hasCpf = !string.IsNullOrWhiteSpace(cpf);
+        bool hasPassport = !string.IsNullOrWhiteSpace(passportNumber);
+
         return await _context.Students.AnyAsync(student =>
             (!userId.HasValue || student.UserId != userId.Value) &&
             (student.RegistrationNumber == registrationNumber ||
-             (cpf != null && student.Cpf == cpf) ||
-             (passportNumber != null && student.PassportNumber == passportNumber)));
+             (hasCpf && student.Cpf == cpf) ||
+             (hasPassport && student.PassportNumber == passportNumber)));
     }
 
+    private static bool IsBrazilian(string? nationality) =>
+        !string.IsNullOrWhiteSpace(nationality) &&
+        nationality.Trim().Equals("Brasil", StringComparison.OrdinalIgnoreCase);
+
+    private static bool ValidateNationalityAndDocuments(string? nationality, string? cpf, string? passportNumber)
+    {
+        if (string.IsNullOrWhiteSpace(nationality))
+            return false;
+
+        if (IsBrazilian(nationality))
+            return !string.IsNullOrWhiteSpace(cpf);
+
+        return !string.IsNullOrWhiteSpace(passportNumber);
+    }
 }

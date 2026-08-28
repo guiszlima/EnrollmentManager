@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EnrollmentManager.API.DTOs.Course;
 
-public record CourseInputDTO
+public record CourseInputDto
 {
     [Required(ErrorMessage = "Course name is required.")]
     [StringLength(100, MinimumLength = 2, ErrorMessage = "Course name must have between 2 and 100 characters.")]

@@ -1,4 +1,4 @@
-using EnrollmentManager.API.DTOS.Role;
+using EnrollmentManager.API.DTOs.Role;
 
 namespace EnrollmentManager.API.Services.Interfaces.Role;
 

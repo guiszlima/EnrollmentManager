@@ -1,6 +1,6 @@
-namespace EnrollmentManager.API.DTOS.Student;
+namespace EnrollmentManager.API.DTOs.Student;
 
-public class StudentResponseDTO
+public class StudentResponseDto
 {
     public int UserId { get; init; }
     public string UserName { get; init; } = string.Empty;
