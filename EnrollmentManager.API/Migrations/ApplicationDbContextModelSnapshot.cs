@@ -22,7 +22,7 @@ namespace EnrollmentManager.API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.Enrollment", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.Course", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,43 +30,107 @@ namespace EnrollmentManager.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("EnrollmentDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ModeId")
+                    b.Property<int>("CourseStatusId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("ProgramName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("CourseTypeId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("StatusId")
+                    b.Property<int>("EducationLevelId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("StudentId")
-                        .HasColumnType("integer");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModeId");
+                    b.HasIndex("CourseStatusId");
 
                     b.HasIndex("CourseTypeId");
 
-                    b.HasIndex("StatusId");
+                    b.HasIndex("EducationLevelId");
 
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("Enrollments");
+                    b.ToTable("Courses");
                 });
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.EnrollmentFormat", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.CourseStatus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("CourseStatuses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "ACTIVE",
+                            Description = "The course is active and accepting new enrollments.",
+                            Name = "Active"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "INACTIVE",
+                            Description = "The course is inactive and not available for new enrollments.",
+                            Name = "Inactive"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "DRAFT",
+                            Description = "The course is under creation and not yet available to the public.",
+                            Name = "Draft"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Code = "DISCONTINUED",
+                            Description = "The course has been permanently discontinued.",
+                            Name = "Discontinued"
+                        });
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.CourseStudyFormat", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FormatId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CourseId", "FormatId");
+
+                    b.HasIndex("FormatId");
+
+                    b.ToTable("CourseStudyFormats");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.CourseType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -81,7 +145,94 @@ namespace EnrollmentManager.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EnrollmentFormats");
+                    b.ToTable("CourseTypes");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.EducationLevel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EducationLevels");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Graduação"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Pós-graduação"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Mestrado"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Doutorado"
+                        });
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.Enrollment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EnrollmentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FormatId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActiveEnrollment")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("StatusId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("FormatId");
+
+                    b.HasIndex("StatusId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("StudentId", "CourseId", "FormatId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Enrollments_StudentId_CourseId_FormatId_Active")
+                        .HasFilter("\"IsActiveEnrollment\" = TRUE");
+
+                    b.ToTable("Enrollments");
                 });
 
             modelBuilder.Entity("EnrollmentManager.API.Models.EnrollmentStatus", b =>
@@ -151,7 +302,7 @@ namespace EnrollmentManager.API.Migrations
                         });
                 });
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.CourseType", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.PasswordResetToken", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -159,14 +310,24 @@ namespace EnrollmentManager.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Name")
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.ToTable("CourseTypes");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens");
                 });
 
             modelBuilder.Entity("EnrollmentManager.API.Models.Role", b =>
@@ -236,7 +397,45 @@ namespace EnrollmentManager.API.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("Student");
+                    b.HasIndex("RegistrationNumber")
+                        .IsUnique();
+
+                    b.ToTable("Students");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.StudyFormat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StudyFormats");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Presencial"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "EAD"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Híbrido"
+                        });
                 });
 
             modelBuilder.Entity("EnrollmentManager.API.Models.User", b =>
@@ -247,19 +446,20 @@ namespace EnrollmentManager.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Active")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<int>("RoleId")
+                    b.Property<int?>("RoleId")
                         .HasColumnType("integer");
 
                     b.Property<string>("UserName")
@@ -277,17 +477,63 @@ namespace EnrollmentManager.API.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.Enrollment", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.Course", b =>
                 {
-                    b.HasOne("EnrollmentManager.API.Models.EnrollmentFormat", "Mode")
-                        .WithMany("Enrollments")
-                        .HasForeignKey("ModeId")
+                    b.HasOne("EnrollmentManager.API.Models.CourseStatus", "CourseStatus")
+                        .WithMany("Courses")
+                        .HasForeignKey("CourseStatusId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EnrollmentManager.API.Models.CourseType", "CourseType")
-                        .WithMany("Enrollments")
+                        .WithMany("Courses")
                         .HasForeignKey("CourseTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EnrollmentManager.API.Models.EducationLevel", "EducationLevel")
+                        .WithMany("Courses")
+                        .HasForeignKey("EducationLevelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseStatus");
+
+                    b.Navigation("CourseType");
+
+                    b.Navigation("EducationLevel");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.CourseStudyFormat", b =>
+                {
+                    b.HasOne("EnrollmentManager.API.Models.Course", "Course")
+                        .WithMany("AllowedFormats")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EnrollmentManager.API.Models.StudyFormat", "Format")
+                        .WithMany()
+                        .HasForeignKey("FormatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Format");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.Enrollment", b =>
+                {
+                    b.HasOne("EnrollmentManager.API.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EnrollmentManager.API.Models.StudyFormat", "Format")
+                        .WithMany("Enrollments")
+                        .HasForeignKey("FormatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -303,13 +549,24 @@ namespace EnrollmentManager.API.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Mode");
+                    b.Navigation("Course");
 
-                    b.Navigation("CourseType");
+                    b.Navigation("Format");
 
                     b.Navigation("Status");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.PasswordResetToken", b =>
+                {
+                    b.HasOne("EnrollmentManager.API.Models.User", "User")
+                        .WithMany("PasswordResetTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EnrollmentManager.API.Models.Student", b =>
@@ -327,16 +584,29 @@ namespace EnrollmentManager.API.Migrations
                 {
                     b.HasOne("EnrollmentManager.API.Models.Role", "Role")
                         .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RoleId");
 
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.EnrollmentFormat", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.Course", b =>
                 {
-                    b.Navigation("Enrollments");
+                    b.Navigation("AllowedFormats");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.CourseStatus", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.CourseType", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.EducationLevel", b =>
+                {
+                    b.Navigation("Courses");
                 });
 
             modelBuilder.Entity("EnrollmentManager.API.Models.EnrollmentStatus", b =>
@@ -344,14 +614,19 @@ namespace EnrollmentManager.API.Migrations
                     b.Navigation("Enrollments");
                 });
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.CourseType", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.Role", b =>
+                {
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("EnrollmentManager.API.Models.StudyFormat", b =>
                 {
                     b.Navigation("Enrollments");
                 });
 
-            modelBuilder.Entity("EnrollmentManager.API.Models.Role", b =>
+            modelBuilder.Entity("EnrollmentManager.API.Models.User", b =>
                 {
-                    b.Navigation("Users");
+                    b.Navigation("PasswordResetTokens");
                 });
 #pragma warning restore 612, 618
         }

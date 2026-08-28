@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EnrollmentManager.API.csproj" />
     <ProjectReference Include="..\EnrollmentManager.API\EnrollmentManager.API.csproj" />
   </ItemGroup>
 

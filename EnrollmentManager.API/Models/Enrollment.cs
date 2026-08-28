@@ -41,4 +41,8 @@ public class Enrollment
     public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;
 
     public DateTime? CompletionDate { get; set; }
+
+    // Mantido pelo serviço a partir do código do status. Permite ao PostgreSQL
+    // garantir que não existam matrículas simultaneamente ativas.
+    public bool IsActiveEnrollment { get; set; }
 }

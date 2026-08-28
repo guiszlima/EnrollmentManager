@@ -22,10 +22,10 @@ public class User
     [MaxLength(150)]
     public string Email { get; set; } = string.Empty;
 
-    public int RoleId { get; set; }
+    public int? RoleId { get; set; }
 
     [ForeignKey(nameof(RoleId))]
-    public Role Role { get; set; } = null!;
+    public Role? Role { get; set; } 
 
     public bool IsActive { get; set; }
 

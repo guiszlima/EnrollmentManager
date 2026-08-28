@@ -3,6 +3,7 @@ using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.Dtos.User;
 using EnrollmentManager.API.Models;
 using Microsoft.EntityFrameworkCore;
+using EnrollmentManager.API.DTOS.Admin;
 
 namespace EnrollmentManager.API.Services.Admin;
 
@@ -29,7 +30,7 @@ public class AdminService : IAdminService
             })
             .ToListAsync();
 
-        return new ApiResponseDto<List<AdminUserDto>>(Data: users);
+        return new ApiResponseDto<List<AdminUserDto>> { Data = users };
     }
 
     public async Task<ApiResponseDto<AdminUserDto>> ChangeUserRoleAsync(
@@ -41,13 +42,13 @@ public class AdminService : IAdminService
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user is null)
-            return new ApiResponseDto<AdminUserDto>(Errors: ["Usuário não encontrado."]);
+            return ApiResponseDto<AdminUserDto>.Error("Usuário não encontrado.");
 
         Role? role = await _context.Roles
-            .FirstOrDefaultAsync(r => r.Id == dto.RoleId);
+        .FirstOrDefaultAsync(r => r.Id == dto.RoleId);
 
-        if (role is null)
-            return new ApiResponseDto<AdminUserDto>(Errors: ["Cargo não encontrado."]);
+    if (role is null)
+        return ApiResponseDto<AdminUserDto>.Error("Cargo não encontrado.");
 
         user.RoleId = role.Id;
         user.Role = role;
@@ -56,7 +57,7 @@ public class AdminService : IAdminService
 
         AdminUserDto result = MapToAdminUserDto(user);
 
-        return new ApiResponseDto<AdminUserDto>(Data: result);
+        return new ApiResponseDto<AdminUserDto> { Data = result };
     }
 
     public async Task<ApiResponseDto<bool>> DeleteUserAsync(int userId)
@@ -65,42 +66,54 @@ public class AdminService : IAdminService
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user is null)
-            return new ApiResponseDto<bool>(Errors: ["Usuário não encontrado."]);
+            return ApiResponseDto<bool>.Error("Usuário não encontrado.");
 
         _context.Users.Remove(user);
 
         await _context.SaveChangesAsync();
 
-        return new ApiResponseDto<bool>(
-            Data: true,
-            Message: "Usuário removido com sucesso."
-        );
+        return new ApiResponseDto<bool> {
+            Data = true,
+            Message = "Usuário removido com sucesso."
+        };
     }
 
-    public async Task<ApiResponseDto<AdminUserDto>> ApproveUserAsync(int userId)
+    public async Task<ApiResponseDto<AdminUserDto>> ApproveUserAsync(
+    int userId,
+    ApproveUserDto dto)
+{
+    User? user = await _context.Users
+        .Include(u => u.Role)
+        .FirstOrDefaultAsync(u => u.Id == userId);
+
+if (user is null)
+    return ApiResponseDto<AdminUserDto>.Error("Usuário não encontrado.");
+
+if (user.IsActive)
+    return ApiResponseDto<AdminUserDto>.Error("Usuário já está ativo.");
+
+
+    
+   Role? role = await _context.Roles
+        .FirstOrDefaultAsync(r => r.Id == dto.RoleId);
+
+    if (role is null)
+        return ApiResponseDto<AdminUserDto>.Error("Cargo informado não encontrado.");
+
+    user.RoleId = role.Id;
+    user.Role = role;
+    user.IsActive = true;
+
+    await _context.SaveChangesAsync();
+
+    AdminUserDto result = MapToAdminUserDto(user);
+
+    return new ApiResponseDto<AdminUserDto>
     {
-        User? user = await _context.Users
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Id == userId);
-
-        if (user is null)
-            return new ApiResponseDto<AdminUserDto>(Errors: ["Usuário não encontrado."]);
-
-        if (user.IsActive)
-            return new ApiResponseDto<AdminUserDto>(Errors: ["Usuário já está ativo."]);
-
-        user.IsActive = true;
-
-        await _context.SaveChangesAsync();
-
-        AdminUserDto result = MapToAdminUserDto(user);
-
-        return new ApiResponseDto<AdminUserDto>(
-            Data: result,
-            Message: "Usuário aceito com sucesso."
-        );
-    }
-
+        Data = result,
+        Message = "Usuário aceito com sucesso."
+    };
+}
     private static AdminUserDto MapToAdminUserDto(User user)
     {
         return new AdminUserDto
@@ -108,7 +121,7 @@ public class AdminService : IAdminService
             Id = user.Id,
             Username = user.UserName,
             Email = user.Email,
-            Role = user.Role!.Name,
+            Role = user.Role?.Name,
             Status = user.IsActive
         };
     }

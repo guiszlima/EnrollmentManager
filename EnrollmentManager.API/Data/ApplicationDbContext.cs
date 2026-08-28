@@ -38,6 +38,20 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<CourseStudyFormat>()
             .HasKey(cf => new { cf.CourseId, cf.FormatId });
 
+        modelBuilder.Entity<Enrollment>()
+            .HasIndex(enrollment => enrollment.StudentId);
+
+        modelBuilder.Entity<Enrollment>()
+            .HasIndex(enrollment => new
+            {
+                enrollment.StudentId,
+                enrollment.CourseId,
+                enrollment.FormatId
+            })
+            .IsUnique()
+            .HasDatabaseName("IX_Enrollments_StudentId_CourseId_FormatId_Active")
+            .HasFilter("\"IsActiveEnrollment\" = TRUE");
+
         // Aplica automaticamente todas as Fluent Configurations da pasta Configurations (se houver)
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }

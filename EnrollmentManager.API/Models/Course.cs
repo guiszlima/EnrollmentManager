@@ -32,6 +32,6 @@ namespace EnrollmentManager.API.Models
         public CourseStatus CourseStatus { get; set; } = null!;
 
         // Formatos em que este curso está disponível (via tabela de junção)
-        public ICollection<CourseStudyFormat> Format { get; set; } = new List<CourseStudyFormat>();
+        public ICollection<CourseStudyFormat> AllowedFormats { get; set; } = new List<CourseStudyFormat>();
     }
 }

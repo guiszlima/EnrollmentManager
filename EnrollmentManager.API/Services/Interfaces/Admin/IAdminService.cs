@@ -1,5 +1,6 @@
 using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.Dtos.User;
+using EnrollmentManager.API.DTOS.Admin;
 
 namespace EnrollmentManager.API.Services.Admin;
 
@@ -13,5 +14,5 @@ public interface IAdminService
 
     Task<ApiResponseDto<bool>> DeleteUserAsync(int userId);
 
-    Task<ApiResponseDto<AdminUserDto>> ApproveUserAsync(int userId);
+    Task<ApiResponseDto<AdminUserDto>> ApproveUserAsync(int userId, ApproveUserDto dto);
 }

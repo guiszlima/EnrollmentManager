@@ -3,11 +3,14 @@ using EnrollmentManager.API.Dtos.User;
 using EnrollmentManager.API.Services.Admin;
 using EnrollmentManager.API.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Mvc;
+using EnrollmentManager.API.DTOS.Admin;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnrollmentManager.API.Controllers;
 
 [ApiController]
 [Route("api/admin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
@@ -51,18 +54,19 @@ public class AdminController : ControllerBase
 
         return Ok(response);
     }
-    
-    [HttpPatch("users/{id}/approve")]
-    public async Task<ActionResult<ApiResponseDto<AdminUserDto>>> ApproveUserAsync(
-        int id)
-    {
-        var response = await _adminService.ApproveUserAsync(id);
+   [HttpPatch("users/{id}/approve")]
+public async Task<ActionResult<ApiResponseDto<AdminUserDto>>> ApproveUserAsync(
+    int id,
+    [FromBody] ApproveUserDto dto)
+{
+    var response = await _adminService.ApproveUserAsync(id, dto);
 
-        if (response.Errors is { Count: > 0 })
-            return NotFound(response);
+    if (response.Errors is { Count: > 0 })
+        return NotFound(response);
 
-        return Ok(response);
-    }
+    return Ok(response);
+}
+
     [HttpPost("users/{id}/reset-password")]
     public async Task<ActionResult<ApiResponseDto<bool>>> ResetUserPasswordAsync(
         int id)

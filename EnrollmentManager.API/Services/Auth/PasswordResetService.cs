@@ -30,14 +30,30 @@ public class PasswordResetService : IPasswordResetService
     public async Task<ApiResponseDto<bool>> RequestPasswordResetAsync(
         int userId)
     {
-     
-
         User? user = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == userId);
 
+        return await RequestPasswordResetAsync(user);
+    }
+
+    public async Task<ApiResponseDto<bool>> RequestPasswordResetAsync(string email)
+    {
+        User? user = await _context.Users
+            .FirstOrDefaultAsync(current => current.Email == email);
+
+        return await RequestPasswordResetAsync(user);
+    }
+
+    private async Task<ApiResponseDto<bool>> RequestPasswordResetAsync(User? user)
+    {
+
         if (user is null)
         {
-            return new ApiResponseDto<bool>(Errors: ["Usuário não encontrado"]);
+            return ApiResponseDto<bool>.Error("Usuário não encontrado.");
+        }
+        if(!user.IsActive)
+        {
+            return ApiResponseDto<bool>.Error("Usuário inativo.");
         }
 
         // Invalida tokens anteriores que ainda poderiam ser utilizados.
@@ -78,10 +94,10 @@ public class PasswordResetService : IPasswordResetService
             body
         );
 
-        return new ApiResponseDto<bool>(
-            Data: true,
-            Message: "Instruções para redefinição de senha enviadas ao usuário."
-        );
+        return new ApiResponseDto<bool>{
+            Data = true,
+            Message = "Instruções para redefinição de senha enviadas ao usuário."
+        };
     }
 
     public async Task<ApiResponseDto<bool>> ResetPasswordAsync(
@@ -95,7 +111,7 @@ public class PasswordResetService : IPasswordResetService
         }
         catch (FormatException)
         {
-            return new ApiResponseDto<bool>(Errors: ["Token inválido."]);
+            return ApiResponseDto<bool>.Error("Token inválido.");
         }
 
         string tokenHash = Convert.ToHexString(
@@ -113,7 +129,7 @@ public class PasswordResetService : IPasswordResetService
 
         if (resetToken is null)
         {
-            return new ApiResponseDto<bool>(Errors: ["Token inválido ou expirado."]);
+            return ApiResponseDto<bool>.Error("Token inválido ou expirado.");
         }
 
         resetToken.User.PasswordHash =
@@ -139,10 +155,10 @@ public class PasswordResetService : IPasswordResetService
 
         await _context.SaveChangesAsync();
 
-        return new ApiResponseDto<bool>(
-            Data: true,
-            Message: "Senha redefinida com sucesso."
-        );
+        return new ApiResponseDto<bool> {
+            Data = true,
+            Message = "Senha redefinida com sucesso."
+        };
     }
 
     private static TokenResult GenerateToken()

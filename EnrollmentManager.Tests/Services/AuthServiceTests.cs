@@ -41,14 +41,13 @@ public class AuthServiceTests
         await context.SaveChangesAsync();
 
         var service = new AuthService(context, _passwordHasherMock.Object, _tokenServiceMock.Object);
-        var dto = new RegisterUserDTO("NewUser", "test@test.com", "Password123");
+        var dto = new RegisterUserDto("NewUser", "test@test.com", "Password123");
 
         // Act
         var result = await service.RegisterAsync(dto);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("O e-mail já está em uso.");
+        result.Errors.Should().ContainSingle().Which.Should().Be("O e-mail já está em uso.");
     }
 
     [Fact]
@@ -58,7 +57,7 @@ public class AuthServiceTests
         using var context = GetInMemoryDbContext();
         var service = new AuthService(context, _passwordHasherMock.Object, _tokenServiceMock.Object);
         
-        var dto = new RegisterUserDTO("NewUser", "new@test.com", "Password123");
+        var dto = new RegisterUserDto("NewUser", "new@test.com", "Password123");
         
         _passwordHasherMock
             .Setup(p => p.HashPassword(It.IsAny<User>(), dto.Password))
@@ -68,7 +67,7 @@ public class AuthServiceTests
         var result = await service.RegisterAsync(dto);
 
         // Assert
-        result.Success.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
         context.Users.Should().ContainSingle(u => u.Email == "new@test.com");
         var savedUser = await context.Users.FirstAsync(u => u.Email == "new@test.com");
         savedUser.PasswordHash.Should().Be("secure_hashed_password");
@@ -83,14 +82,13 @@ public class AuthServiceTests
         // Arrange
         using var context = GetInMemoryDbContext();
         var service = new AuthService(context, _passwordHasherMock.Object, _tokenServiceMock.Object);
-        var dto = new LoginUserDTO("notfound@test.com", "Password123");
+        var dto = new LoginUserDto("notfound@test.com", "Password123");
 
         // Act
         var result = await service.LoginAsync(dto);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Credenciais inválidas.");
+        result.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
     }
 
     [Fact]
@@ -98,7 +96,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = GetInMemoryDbContext();
-        var user = new User { UserName = "User", Email = "user@test.com", PasswordHash = "valid_hash" };
+        var user = new User { UserName = "User", Email = "user@test.com", PasswordHash = "valid_hash", IsActive = true };
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
@@ -107,14 +105,32 @@ public class AuthServiceTests
             .Returns(PasswordVerificationResult.Failed);
 
         var service = new AuthService(context, _passwordHasherMock.Object, _tokenServiceMock.Object);
-        var dto = new LoginUserDTO("user@test.com", "WrongPassword");
+        var dto = new LoginUserDto("user@test.com", "WrongPassword");
 
         // Act
         var result = await service.LoginAsync(dto);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Be("Credenciais inválidas.");
+        result.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
+    }
+
+    [Fact]
+    public async Task LoginAsync_Should_Fail_When_User_Is_Inactive()
+    {
+        using var context = GetInMemoryDbContext();
+        var user = new User { UserName = "Inactive", Email = "inactive@test.com", PasswordHash = "valid_hash", IsActive = false };
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        _passwordHasherMock
+            .Setup(p => p.VerifyHashedPassword(user, user.PasswordHash, "Password123"))
+            .Returns(PasswordVerificationResult.Success);
+
+        var result = await new AuthService(context, _passwordHasherMock.Object, _tokenServiceMock.Object)
+            .LoginAsync(new LoginUserDto("inactive@test.com", "Password123"));
+
+        result.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
+        _tokenServiceMock.Verify(service => service.GenerateToken(It.IsAny<User>()), Times.Never);
     }
 
     [Fact]
@@ -122,7 +138,7 @@ public class AuthServiceTests
     {
         // Arrange
         using var context = GetInMemoryDbContext();
-        var user = new User { UserName = "User", Email = "user@test.com", PasswordHash = "valid_hash" };
+        var user = new User { UserName = "User", Email = "user@test.com", PasswordHash = "valid_hash", IsActive = true };
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
@@ -136,13 +152,13 @@ public class AuthServiceTests
 
          
         var service = new AuthService(context, _passwordHasherMock.Object, _tokenServiceMock.Object);
-        var dto = new LoginUserDTO("user@test.com", "Password123");
+        var dto = new LoginUserDto("user@test.com", "Password123");
 
         // Act
         var result = await service.LoginAsync(dto);
 
         // Assert
-        result.Success.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
         result.Data.Should().Be("mocked_jwt_token");
         result.Message.Should().Be("Login realizado com sucesso.");
 

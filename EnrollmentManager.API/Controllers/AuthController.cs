@@ -3,11 +3,13 @@ using EnrollmentManager.API.DTOS.Auth;
 using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EnrollmentManager.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[AllowAnonymous]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -41,5 +43,23 @@ public class AuthController : ControllerBase
         }
 
         return Ok(response);
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult<ApiResponseDto<bool>>> ForgotPassword(
+        [FromServices] IPasswordResetService passwordResetService,
+        [FromBody] ForgotPasswordDto dto)
+    {
+        var response = await passwordResetService.RequestPasswordResetAsync(dto.Email);
+        return response.Errors is { Count: > 0 } ? BadRequest(response) : Ok(response);
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<ActionResult<ApiResponseDto<bool>>> ResetPassword(
+        [FromServices] IPasswordResetService passwordResetService,
+        [FromBody] ResetPasswordDto dto)
+    {
+        var response = await passwordResetService.ResetPasswordAsync(dto);
+        return response.Errors is { Count: > 0 } ? BadRequest(response) : Ok(response);
     }
 }

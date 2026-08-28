@@ -1,7 +1,18 @@
+
+
 namespace EnrollmentManager.API.DTOs.Common;
 
-public record ApiResponseDto<T>(
-    T? Data = default,
-    string? Message = null,
-    IReadOnlyList<string>? Errors = null
-);
+public class ApiResponseDto<T>
+{
+    public T? Data { get; init; } = default;
+    public string? Message { get; init; } = null;
+   
+    public IReadOnlyList<string> Errors { get; init; } =               [];
+    public static ApiResponseDto<T> Error(string message)
+{
+    return new ApiResponseDto<T>
+    {
+        Errors = [message]
+    };
+}
+}

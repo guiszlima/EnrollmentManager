@@ -31,7 +31,8 @@ public class TokenService : ITokenService
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Email, user.Email )
+                new Claim(ClaimTypes.Email, user.Email ),
+                new Claim(ClaimTypes.Role, user.Role?.Name ?? string.Empty)
             }),
             // Define a expiração do token (ex: 2 horas)
             Expires = DateTime.UtcNow.AddHours(2),

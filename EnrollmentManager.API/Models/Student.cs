@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace EnrollmentManager.API.Models;
 
+[Index(nameof(RegistrationNumber), IsUnique = true)]
 public class Student
 {
     [Key, ForeignKey("User")]

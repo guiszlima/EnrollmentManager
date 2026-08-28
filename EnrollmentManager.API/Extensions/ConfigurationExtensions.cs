@@ -12,9 +12,7 @@ public static class ConfigurationExtensions
             configuration.GetSection("Email")
         );
         services.Configure<AppConfiguration>(
-            configuration.GetSection("Frontendurl")
-            
-            );
+            configuration.GetSection("App"));
         return services;
     }
 }

@@ -8,6 +8,8 @@ public interface IPasswordResetService
 {
     Task<ApiResponseDto<bool>> RequestPasswordResetAsync(int userId);
 
+    Task<ApiResponseDto<bool>> RequestPasswordResetAsync(string email);
+
     Task<ApiResponseDto<bool>> ResetPasswordAsync(
         ResetPasswordDto dto);
 }
