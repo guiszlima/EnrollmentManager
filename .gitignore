@@ -1,19 +1,18 @@
-# Arquivos de Build / Compilação
-bin/
-obj/
+## .NET Core / Visual Studio
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.userosscache
+.DotSettings.user
 
-# Arquivos locais e segredos de desenvolvimento
-appsettings.Development.json
-appsettings.Local.json
-.env
-
-# Configurações de IDEs e Cache (Rider / ReSharper)
+## IDEs e Ferramentas
 .idea/
-*.iml
-riderModule.iml
-_ReSharper.Caches/
+.continue/
 
-# Pacotes do NuGet
-/packages/
-*.nuget.props
-*.nuget.targets
+## Variáveis de Ambiente e Configurações Sensíveis
+.env
+**/appsettings.json
+!**/appsettings.json.example
+!**/appsettings.json.example.json
