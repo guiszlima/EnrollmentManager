@@ -94,8 +94,8 @@ if (user.IsActive)
 
 
     
-   Role? role = await _context.Roles
-        .FirstOrDefaultAsync(r => r.Id == dto.RoleId);
+Role? role = await _context.Roles
+    .FirstOrDefaultAsync(r => r.Id == dto.RoleId);
 
     if (role is null)
         return ApiResponseDto<AdminUserDto>.Error("Cargo informado não encontrado.");

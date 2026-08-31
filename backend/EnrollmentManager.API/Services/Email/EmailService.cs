@@ -1,5 +1,4 @@
 using EnrollmentManager.API.Configurations;
-using EnrollmentManager.API.Configurations;
 using EnrollmentManager.API.Services.Interfaces;
 
 using MailKit.Net.Smtp;

@@ -7,12 +7,22 @@
 *.userosscache
 .DotSettings.user
 
+## Diretórios do projeto
+backend/**/[Bb]in/
+backend/**/[Oo]bj/
+backend/**/.vs/
+backend/**/.idea/
+backend/**/.continue/
+
 ## IDEs e Ferramentas
 .idea/
 .continue/
 
 ## Variáveis de Ambiente e Configurações Sensíveis
 .env
-**/appsettings.json
+backend/.env
+backend/**/.env
+**/appsettings*.json
 !**/appsettings.json.example
 !**/appsettings.json.example.json
+!**/appsettings.Development.example.json

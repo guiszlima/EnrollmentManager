@@ -14,28 +14,25 @@
   enrollmentmanager.api:
     image: enrollmentmanager.api.dev
     build:
-      context: .
-      dockerfile: EnrollmentManager.API/Dockerfile # Caminho correto a partir da raiz
+      context: ./backend
+      dockerfile: ./EnrollmentManager.API/Dockerfile
 
     ports:
       - "8080:8080"
 
     environment:
-      ASPNETCORE_ENVIRONMENT: Development # Força o modo Dev para ver erros detalhados
-      ASPNETCORE_URLS: http://0.0.0
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:8080
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
 
     volumes:
-      - .:/src:rw # 'rw' garante permissão de leitura e escrita explícita
-      - /src/EnrollmentManager.API/bin/
-      - /src/EnrollmentManager.API/obj/
+      - ./backend:/src:rw
       - dotnet_nuget:/root/.nuget/packages
-
 
     depends_on:
       - postgres
 
 volumes:
   postgres_data:
-  dotnet_nuget: 
+  dotnet_nuget:
