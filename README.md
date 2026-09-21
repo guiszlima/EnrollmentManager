@@ -6,7 +6,7 @@ O projeto é dividido em uma API .NET e uma aplicação Angular. As regras de ne
 
 ## Principais recursos
 
-- Autenticação com JWT e controle de acesso por papel (`ADMIN`, `SECRETARY`, `TEACHER` e `STUDENT`).
+- Autenticação com JWT e controle de acesso por cargo (`ADMIN`, `SECRETARY`, `TEACHER` e `STUDENT`).
 - Cadastro e edição de alunos e professores, incluindo os formatos de estudo permitidos.
 - Cadastro, edição e filtros de cursos.
 - Matrículas vinculadas exclusivamente por `Enrollment` (`Student -> Enrollment -> Course`).
@@ -93,13 +93,13 @@ npm run build
 - `GET /api/enrollments` — matrículas para usuários administrativos; retorna todos os status.
 - `GET /api/courses/{courseId}/report` — relatório detalhado de um curso.
 
-O acesso aos dados de matrícula é limitado por papel: usuários administrativos podem consultar todas as matrículas; `STUDENT` e `TEACHER` consultam somente os registros relacionados a si mesmos, conforme as regras do domínio.
+O acesso aos dados de matrícula é limitado por cargo: usuários administrativos podem consultar todas as matrículas; `STUDENT` e `TEACHER` consultam somente os registros relacionados a si mesmos, conforme as regras do domínio.
 
 ## Regras importantes
 
 - O `RegistrationNumber` do Student é gerado exclusivamente pelo `StudentService`.
-- Um usuário administrador não pode ser excluído.
-- Uma matrícula só pode ser aprovada quando o usuário do aluno está ativo e possui o papel `STUDENT`.
+- O usuário administrador não pode ser excluído.
+- Uma matrícula só pode ser aprovada quando o usuário do aluno está ativo e possui o cargo `STUDENT`.
 - Matrículas trancadas não ocupam vagas nem entram na contagem de matrículas ativas do curso.
 - O dashboard de Student expõe apenas Courses e Enrollments; o dashboard geral é reservado aos papéis administrativos.
 
