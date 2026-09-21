@@ -1,0 +1,20 @@
+<section class="panel">
+  <div class="panel-heading">
+    <div><h2>Usuários da plataforma</h2><p>Ative acessos e mantenha os papéis sob controle.</p><div class="mt-3 flex gap-2"><button type="button" class="table-action" [class.nav-active]="activeUsers" (click)="setUserFilter(true)">Ativos</button><button type="button" class="table-action" [class.nav-active]="!activeUsers" (click)="setUserFilter(false)">Pendentes</button></div></div>
+    <input class="field max-w-xs" [(ngModel)]="query" (ngModelChange)="filterUsers()" placeholder="Buscar usuário..." />
+  </div>
+  <p *ngIf="successMessage" class="alert-success mb-4">{{ successMessage }}</p>
+  <app-api-errors [errors]="errors"></app-api-errors>
+  <div *ngIf="loading" class="loading">Carregando usuários...</div>
+  <div *ngIf="!loading && filteredUsers.length" class="overflow-x-auto">
+    <table class="data-table"><thead><tr><th>Usuário</th><th>Papel</th><th>Status</th><th class="text-right">Ações</th></tr></thead><tbody>
+      <tr *ngFor="let user of filteredUsers">
+        <td><strong>{{ user.username }}</strong><small>{{ user.email }}</small></td>
+        <td><select class="field py-2 text-xs" [(ngModel)]="approvalRoleId[user.id]"><option *ngFor="let role of roles" [ngValue]="role.id">{{ role.name }}</option></select></td>
+        <td><span class="badge" [class.badge-muted]="!user.status">{{ user.status ? 'Ativo' : 'Pendente' }}</span></td>
+        <td class="text-right"><button *ngIf="!user.status" type="button" class="table-action" (click)="approve(user)">Aprovar</button><button *ngIf="user.status" type="button" class="table-action" (click)="changeRole(user)">Salvar Cargo</button><button *ngIf="user.status" type="button" class="table-action" (click)="resetPassword(user)">Resetar senha</button><button type="button" class="table-action danger" (click)="removeUser(user)">Excluir</button></td>
+      </tr>
+    </tbody></table>
+  </div>
+  <div *ngIf="!loading && !filteredUsers.length" class="empty-state">Nenhum usuário encontrado.</div>
+</section>

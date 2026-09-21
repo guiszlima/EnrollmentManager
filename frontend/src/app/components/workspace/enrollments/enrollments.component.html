@@ -1,0 +1,112 @@
+<section class="panel">
+
+  <div class="panel-heading">
+    <div>
+      <h2>Matrículas</h2>
+      <p>Alunos, cursos, formatos e status em uma única visão.</p>
+    </div>
+
+    <input
+      class="field max-w-xs"
+      [(ngModel)]="query"
+      (ngModelChange)="filterEnrollments()"
+      placeholder="Buscar matrícula..."
+    />
+  </div>
+
+  <p
+    *ngIf="successMessage"
+    class="alert-success mb-4"
+  >
+    {{ successMessage }}
+  </p>
+
+  <app-api-errors [errors]="errors"></app-api-errors>
+
+  <div
+    *ngIf="loading"
+    class="loading"
+  >
+    Carregando matrículas...
+  </div>
+
+  <div
+    *ngIf="!loading && filteredEnrollments.length"
+    class="overflow-x-auto"
+  >
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>Curso</th>
+          <th>Formato</th>
+          <th>Status</th>
+          <th>Data</th>
+          <th *ngIf="isStaff">Ações</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let enrollment of filteredEnrollments">
+          <td>
+            <strong>{{ enrollment.studentName }}</strong>
+          </td>
+
+          <td>
+            {{ enrollment.courseName }}
+          </td>
+
+          <td>
+            {{ enrollment.formatName }}
+          </td>
+
+          <td>
+            <span class="badge">
+              {{ enrollment.statusName }}
+            </span>
+          </td>
+
+          <td>
+            {{ enrollment.enrollmentDate | date:'dd/MM/yyyy' }}
+          </td>
+
+          <td
+            *ngIf="isStaff"
+            class="text-right"
+          >
+            <button
+              *ngFor="let status of availableStatuses(enrollment)"
+              type="button"
+              class="table-action"
+              (click)="changeStatus(enrollment, status.id)"
+            >
+              {{ status.name }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div
+    *ngIf="isStaff && !loading && !filteredEnrollments.length"
+    class="empty-state"
+  >
+    Nenhuma matrícula encontrada.
+  </div>
+
+  <div
+    *ngIf="!isStaff && !loading && !filteredEnrollments.length && !query"
+    class="empty-state"
+  >
+    Nenhuma matrícula encontrada. Este aluno ainda não possui matrículas.
+  </div>
+
+  <div
+    *ngIf="!isStaff && !loading && !filteredEnrollments.length && query"
+    class="empty-state"
+  >
+    Nenhuma matrícula corresponde à busca "{{ query }}".
+  </div>
+
+</section>

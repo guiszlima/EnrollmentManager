@@ -1,0 +1,235 @@
+<main class="min-h-screen bg-canvas">
+  <header class="border-b border-line bg-white px-5 py-4 sm:px-8">
+    <div class="mx-auto flex max-w-5xl items-center justify-between">
+      <a routerLink="/students" class="font-display font-bold text-ink">
+        Enrollment Manager
+      </a>
+      <a routerLink="/students" class="text-sm font-bold text-slate-500">
+        Voltar aos alunos
+      </a>
+    </div>
+  </header>
+
+  <!-- Container ajustado: de py-10 para py-6 sm:py-8 -->
+  <div class="mx-auto max-w-5xl px-5 py-6 sm:px-8 sm:py-8">
+    <p class="text-sm font-bold uppercase tracking-[0.18em] text-forest">
+      Cadastro acadêmico
+    </p>
+
+    <!-- Margem superior ajustada: mt-3 para mt-2 -->
+    <h1 class="mt-2 font-display text-3xl font-bold text-ink sm:text-4xl">
+      {{ edit ? 'Editar aluno' : 'Novo aluno' }}
+    </h1>
+
+    <!-- Margem do painel reduzida para mt-6 e adicionado padding interno p-6 sm:p-8 caso necessário -->
+    <section class="panel mt-6 p-6 sm:p-8">
+      <form class="grid gap-6 sm:grid-cols-2" (ngSubmit)="save()" #form="ngForm">
+
+        <!-- Usuário estudante (Modo criação) -->
+        <div class="field-label sm:col-span-2" *ngIf="!edit">
+          <label class="inline-flex items-center gap-3">
+            <input
+              type="checkbox"
+              name="userExists"
+              [(ngModel)]="userExists"
+              class="h-4 w-4 accent-forest"
+            />
+            Usuário já existe?
+          </label>
+        </div>
+
+        <label class="field-label" *ngIf="!edit && userExists">
+          Usuário estudante existente
+          <select
+            class="field mt-2"
+            name="userId"
+            [(ngModel)]="model.userId"
+            [disabled]="loadingUsers"
+            required
+          >
+            <option [ngValue]="0">
+              {{ loadingUsers ? 'Carregando usuários...' : 'Selecione o usuário' }}
+            </option>
+            <option *ngFor="let user of availableUsers" [ngValue]="user.id">
+              {{ user.username }} · {{ user.email }}
+            </option>
+          </select>
+
+          <span
+            *ngIf="!loadingUsers && !availableUsers.length"
+            class="mt-2 block text-xs font-semibold text-red-600"
+          >
+            Nenhum usuário estudante disponível para cadastro.
+          </span>
+        </label>
+
+        <ng-container *ngIf="!edit && !userExists">
+          <label class="field-label">
+            Nome de usuário
+            <input
+              class="field mt-2"
+              name="userName"
+              [(ngModel)]="model.userName"
+              minlength="3"
+              maxlength="100"
+              required
+            />
+          </label>
+
+          <label class="field-label">
+            E-mail
+            <input
+              class="field mt-2"
+              type="email"
+              name="userEmail"
+              [(ngModel)]="model.email"
+              maxlength="150"
+              required
+            />
+          </label>
+
+          <label class="field-label">
+            Senha
+            <input
+              class="field mt-2"
+              type="password"
+              name="userPassword"
+              [(ngModel)]="model.password"
+              minlength="6"
+              maxlength="100"
+              required
+            />
+          </label>
+        </ng-container>
+
+        <!-- Usuário estudante (Modo edição) -->
+        <div class="field-label" *ngIf="edit">
+          Usuário estudante
+          <div class="mt-2 rounded-xl border border-line bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            {{ currentUserLabel }}
+          </div>
+        </div>
+
+        <!-- Nacionalidade -->
+        <label class="field-label">
+          Nacionalidade
+          <select
+            class="field mt-2"
+            name="nationality"
+            [(ngModel)]="model.nationality"
+
+            (ngModelChange)="onNationalityChange()"
+            required
+          >
+            <option value="">Selecione a nacionalidade</option>
+            <option *ngFor="let nationality of nationalities" [value]="nationality">
+              {{ nationality }}
+            </option>
+          </select>
+        </label>
+
+        <!-- CPF: somente brasileiros -->
+        <label class="field-label" *ngIf="model.nationality === 'Brasil'">
+          CPF
+          <input
+            class="field mt-2"
+            name="cpf"
+            [(ngModel)]="model.cpf"
+            maxlength="14"
+             pattern="^(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})$"
+            placeholder="000.000.000-00"
+            required
+          />
+        </label>
+
+        <!-- Passaporte: somente estrangeiros -->
+        <label class="field-label" *ngIf="model.nationality && model.nationality !== 'Brasil'">
+          Passaporte
+          <input
+            class="field mt-2"
+            name="passportNumber"
+            [(ngModel)]="model.passportNumber"
+            maxlength="50"
+            required
+          />
+        </label>
+
+        <!-- Data de nascimento -->
+        <label class="field-label">
+          Data de nascimento
+          <input
+            class="field mt-2"
+            type="date"
+            name="birthDate"
+            [(ngModel)]="model.birthDate"
+            required
+          />
+        </label>
+
+        <!-- Telefone -->
+        <label class="field-label">
+          Telefone
+          <input
+            class="field mt-2"
+            name="phone"
+            [(ngModel)]="model.phone"
+            minlength="8"
+            maxlength="20"
+            required
+          />
+        </label>
+
+        <!-- Endereço -->
+        <label class="field-label sm:col-span-2">
+          Endereço
+          <textarea
+            class="field mt-2"
+            name="address"
+            [(ngModel)]="model.address"
+            minlength="5"
+            maxlength="200"
+            required
+            rows="3"
+          ></textarea>
+        </label>
+
+        <!-- Matrícula -->
+
+
+        <!-- Formatos -->
+        <label class="field-label sm:col-span-2">
+          Formatos permitidos
+          <select
+            class="field mt-2 min-h-32"
+            name="formatIds"
+            [(ngModel)]="model.formatIds"
+            multiple
+            required
+          >
+            <option *ngFor="let format of availableFormats" [ngValue]="format.id">
+              {{ format.name }}
+            </option>
+          </select>
+          <span class="mt-1 block text-xs font-medium text-slate-500">
+            Use Ctrl ou Command para selecionar mais de um formato.
+          </span>
+        </label>
+
+        <!-- Erros e ações -->
+        <div class="sm:col-span-2">
+          <app-api-errors [errors]="errors"></app-api-errors>
+
+          <div class="mt-4 flex justify-end gap-3 border-t border-line pt-6">
+            <a routerLink="/students" class="btn-secondary">
+              Cancelar
+            </a>
+            <button class="btn-primary" [disabled]="form.invalid || loading">
+              {{ loading ? 'Salvando...' : 'Salvar aluno' }}
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </section>
+  </div>
+</main>

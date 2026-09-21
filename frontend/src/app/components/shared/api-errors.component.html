@@ -1,0 +1,6 @@
+<div *ngIf="errors?.length" class="alert-error" role="alert" aria-live="polite">
+  <p class="font-bold">Não foi possível concluir a operação.</p>
+  <ul class="mt-2 list-disc space-y-1 pl-5 font-medium">
+    <li *ngFor="let error of errors">{{ error }}</li>
+  </ul>
+</div>

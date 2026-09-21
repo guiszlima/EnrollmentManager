@@ -1,0 +1,99 @@
+<main class="min-h-screen bg-canvas lg:grid lg:grid-cols-[1.1fr_minmax(360px,0.9fr)]">
+  <section
+    class="relative order-2 hidden overflow-hidden bg-[#1d4035] p-12 text-white lg:order-1 lg:flex lg:flex-col lg:justify-between"
+  >
+    <div
+      class="absolute -right-20 bottom-20 h-80 w-80 rounded-full border-[56px] border-[#f3b562]/20"
+    ></div>
+    <div class="relative z-10 flex items-center gap-3">
+      <span
+        class="grid h-11 w-11 place-items-center rounded-2xl bg-[#f3b562] font-display text-xl font-bold text-ink"
+        >e</span
+      ><span class="font-display text-xl font-bold tracking-tight">eixo acadêmico</span>
+    </div>
+    <div class="relative z-10 max-w-lg pb-12">
+      <p class="mb-6 text-sm font-bold uppercase tracking-[0.22em] text-[#b6dbc9]">
+        Um ponto de partida
+      </p>
+      <h1 class="font-display text-5xl font-bold leading-[1.05] tracking-tight">
+        Organize o próximo capítulo.
+      </h1>
+      <p class="mt-6 max-w-sm text-lg leading-8 text-[#d5ebe0]">
+        Cadastre-se para acompanhar cursos e construir uma operação mais fluida.
+      </p>
+    </div>
+    <p class="relative z-10 text-sm text-[#b6dbc9]">Seu ritmo. Sua jornada. Seu eixo.</p>
+  </section>
+  <section
+    class="order-1 flex min-h-screen items-center justify-center px-6 py-10 sm:px-12 lg:order-2"
+  >
+    <div class="w-full max-w-md">
+      <div class="mb-10 lg:hidden">
+        <div class="flex items-center gap-3">
+          <span
+            class="grid h-10 w-10 place-items-center rounded-xl bg-[#f3b562] font-display text-xl font-bold text-ink"
+            >e</span
+          ><span class="font-display text-xl font-bold tracking-tight text-ink"
+            >eixo acadêmico</span
+          >
+        </div>
+      </div>
+      <div class="mb-8">
+        <p class="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-forest">Comece agora</p>
+        <h2 class="font-display text-4xl font-bold tracking-tight text-ink">Crie seu acesso.</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-500">Leva menos de um minuto para entrar.</p>
+      </div>
+      <form class="space-y-5" (ngSubmit)="register()" #form="ngForm">
+        <label class="block text-sm font-bold text-ink"
+          >Nome completo<input
+            class="field mt-2"
+            type="text"
+            name="userName"
+            [(ngModel)]="model.userName"
+            placeholder="Como podemos chamar você?"
+            autocomplete="name"
+            minlength="3"
+            required /></label
+        ><label class="block text-sm font-bold text-ink"
+          >E-mail<input
+            class="field mt-2"
+            type="email"
+            name="email"
+            [(ngModel)]="model.email"
+            placeholder="seu@email.com"
+            autocomplete="email"
+            required /></label
+        ><label class="block text-sm font-bold text-ink"
+          >Senha<input
+            class="field mt-2"
+            type="password"
+            name="password"
+            [(ngModel)]="model.password"
+            #password="ngModel"
+            placeholder="Crie uma senha segura"
+            autocomplete="new-password"
+            minlength="6"
+            required
+          /><span
+            *ngIf="password.invalid && (password.touched || password.dirty)"
+            class="mt-2 block text-sm font-semibold text-red-600"
+            >A senha deve ter no mínimo 6 caracteres.</span
+          ></label
+        ><app-api-errors [errors]="errors"></app-api-errors>
+        <p
+          *ngIf="successMessage"
+          class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700"
+        >
+          {{ successMessage }}
+        </p>
+        <button class="btn-primary w-full py-3.5" type="submit" [disabled]="loading">
+          {{ loading ? 'Criando acesso...' : 'Criar minha conta' }}
+        </button>
+      </form>
+      <p class="mt-8 text-center text-sm text-slate-500">
+        Já tem uma conta?
+        <a class="font-bold text-forest hover:underline" routerLink="/login">Voltar para o login</a>
+      </p>
+    </div>
+  </section>
+</main>

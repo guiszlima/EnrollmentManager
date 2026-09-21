@@ -1,0 +1,109 @@
+<section class="panel">
+
+  <div class="panel-heading">
+
+    <div>
+      <h2>Alunos cadastrados</h2>
+      <p>Consulte os dados acadêmicos e de contato.</p>
+    </div>
+
+    <div class="grid w-full gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <input class="field" [(ngModel)]="filters.name" (ngModelChange)="filterStudents()" placeholder="Nome" />
+      <input class="field" [(ngModel)]="filters.email" (ngModelChange)="filterStudents()" placeholder="E-mail" type="email" />
+      <input class="field" [(ngModel)]="filters.registrationNumber" (ngModelChange)="filterStudents()" placeholder="Matrícula" />
+      <input class="field" [(ngModel)]="filters.nationality" (ngModelChange)="filterStudents()" placeholder="Nacionalidade" />
+      <input class="field" [(ngModel)]="filters.phone" (ngModelChange)="filterStudents()" placeholder="Telefone" />
+    </div>
+
+  </div>
+
+  <app-api-errors [errors]="errors"></app-api-errors>
+
+  <div
+    *ngIf="loading"
+    class="loading"
+  >
+    Carregando alunos...
+  </div>
+
+  <div
+    *ngIf="!loading && filteredStudents.length"
+    class="overflow-x-auto"
+  >
+
+    <table class="data-table">
+
+      <thead>
+        <tr>
+          <th>Aluno</th>
+          <th>Matrícula</th>
+          <th>Nacionalidade</th>
+          <th>Telefone</th>
+          <th></th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let student of filteredStudents">
+
+          <td>
+            <strong>{{ student.userName }}</strong>
+            <small>{{ student.email }}</small>
+          </td>
+
+          <td>
+            {{ student.registrationNumber }}
+          </td>
+
+          <td>
+            {{ student.nationality || 'Não informado' }}
+          </td>
+
+          <td>
+            {{ student.phone }}
+          </td>
+
+          <td class="text-right">
+
+            <a
+              class="table-action"
+              [routerLink]="['/students', student.userId, 'edit']"
+            >
+              Editar
+            </a>
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <div
+    *ngIf="!loading && students.length === 0"
+    class="empty-state"
+  >
+
+    <p>Não há alunos cadastrados no momento.</p>
+
+    <a
+      routerLink="/students/new"
+      class="btn-primary mt-4 inline-block"
+    >
+      + Novo aluno
+    </a>
+
+  </div>
+
+  <div
+    *ngIf="!loading && students.length > 0 && filteredStudents.length === 0"
+    class="empty-state"
+  >
+    Nenhum aluno corresponde à busca.
+  </div>
+
+</section>

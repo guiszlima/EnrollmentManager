@@ -1,0 +1,123 @@
+<div class="min-h-screen bg-canvas">
+  <header class="border-b border-line bg-white px-5 py-4 sm:px-8 lg:px-12">
+    <div class="mx-auto flex max-w-5xl items-center justify-between">
+      <a class="flex items-center gap-3" routerLink="/courses"
+        ><span
+          class="grid h-10 w-10 place-items-center rounded-xl bg-[#f3b562] font-display text-xl font-bold text-ink"
+          >e</span
+        ><span class="font-display font-bold tracking-tight text-ink">eixo acadêmico</span></a
+      >
+      <a class="text-sm font-bold text-slate-500 transition hover:text-forest" routerLink="/courses"
+        >Voltar ao catálogo</a
+      >
+    </div>
+  </header>
+  <main class="mx-auto max-w-5xl px-5 py-8 sm:px-8 lg:py-14">
+    <div class="mb-8">
+      <p class="text-sm font-bold uppercase tracking-[0.18em] text-forest">Catálogo acadêmico</p>
+      <h1 class="mt-3 font-display text-4xl font-bold tracking-tight text-ink">
+        {{ isEdit ? 'Editar curso' : 'Novo curso' }}
+      </h1>
+      <p class="mt-3 text-sm leading-6 text-slate-500">
+        Preencha os dados para manter a oferta da instituição organizada.
+      </p>
+    </div>
+    <div class="grid gap-6 lg:grid-cols-[1fr_280px]">
+      <section class="rounded-2xl border border-line bg-white p-6 shadow-soft sm:p-8">
+        <form class="space-y-6" (ngSubmit)="save()" #form="ngForm">
+          <label class="block text-sm font-bold text-ink"
+            >Nome do curso<input
+              class="field mt-2"
+              type="text"
+              name="name"
+              [(ngModel)]="model.name"
+              placeholder="Ex.: Engenharia de Software"
+              required
+          /></label>
+          <label class="block text-sm font-bold text-ink"
+            >Quantidade total de vagas<input
+              class="field mt-2"
+              type="number"
+              min="1"
+              name="totalSlots"
+              [(ngModel)]="model.totalSlots"
+              required
+          /></label>
+          <div class="grid gap-6 sm:grid-cols-2">
+            <label class="block text-sm font-bold text-ink"
+              >Tipo do curso<select
+                class="field mt-2"
+                name="courseTypeId"
+                [(ngModel)]="model.courseTypeId"
+                required
+              >
+                <option [ngValue]="0">Selecione o tipo</option>
+                <option *ngFor="let item of courseTypes" [ngValue]="item.id">
+                  {{ item.name }}
+                </option>
+              </select></label
+            ><label class="block text-sm font-bold text-ink"
+              >Nível de ensino<select
+                class="field mt-2"
+                name="educationLevelId"
+                [(ngModel)]="model.educationLevelId"
+                required
+              >
+                <option [ngValue]="0">Selecione o nível</option>
+                <option *ngFor="let item of educationLevels" [ngValue]="item.id">
+                  {{ item.name }}
+                </option>
+              </select></label
+            >
+          </div>
+          <label class="block text-sm font-bold text-ink"
+            >Status do curso<select
+              class="field mt-2"
+              name="courseStatusId"
+              [(ngModel)]="model.courseStatusId"
+              required
+            >
+              <option [ngValue]="0">Selecione o status</option>
+              <option *ngFor="let item of courseStatuses" [ngValue]="item.id">
+                {{ item.name }}
+              </option>
+            </select></label
+          >
+          <label class="block text-sm font-bold text-ink">
+            Formatos de estudo
+            <select class="field mt-2 min-h-32" name="formatIds" [(ngModel)]="model.formatIds" multiple required>
+              <option *ngFor="let format of formats" [ngValue]="format.id">{{ format.name }}</option>
+            </select>
+            <span class="mt-1 block text-xs font-medium text-slate-500">Selecione os formatos aceitos pelo curso.</span>
+          </label>
+          <label class="block text-sm font-bold text-ink">
+            Professores
+            <select class="field mt-2 min-h-32" name="teacherIds" [(ngModel)]="model.teacherIds" multiple>
+              <option *ngFor="let teacher of teachers" [ngValue]="teacher.userId">{{ teacher.userName }} · {{ teacher.email }}</option>
+            </select>
+            <span class="mt-1 block text-xs font-medium text-slate-500">Cada professor precisa lecionar todos os formatos selecionados.</span>
+          </label>
+          <app-api-errors [errors]="errors"></app-api-errors>
+          <div
+            class="flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:justify-end"
+          >
+            <button class="btn-secondary" type="button" (click)="cancel()">Cancelar</button
+            ><button class="btn-primary" type="submit" [disabled]="form.invalid || loading">
+              {{ loading ? 'Salvando...' : 'Salvar curso' }}
+            </button>
+          </div>
+        </form>
+      </section>
+      <aside class="h-fit rounded-2xl border border-line bg-[#e7f3ec] p-6">
+        <p class="text-xs font-bold uppercase tracking-[0.15em] text-forest">Dica rápida</p>
+        <p class="mt-4 font-display text-lg font-bold leading-7 text-ink">
+          Dados consistentes deixam a matrícula mais simples.
+        </p>
+        <p class="mt-3 text-sm leading-6 text-slate-600">
+          Use os IDs dos catálogos oficiais para que o curso apareça corretamente nos próximos
+          fluxos.
+        </p>
+      </aside>
+    </div>
+  </main>
+</div>

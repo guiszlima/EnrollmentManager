@@ -1,0 +1,42 @@
+<main class="min-h-screen bg-canvas">
+  <header class="border-b border-line bg-white px-5 py-4 sm:px-8">
+    <div class="mx-auto flex max-w-5xl items-center justify-between">
+      <a routerLink="/courses" class="font-display font-bold text-ink">Enrollment Manager</a>
+      <a routerLink="/courses" class="text-sm font-bold text-slate-500">Voltar ao catálogo</a>
+    </div>
+  </header>
+  <div class="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+    <p class="text-sm font-bold uppercase tracking-[0.18em] text-forest">Equipe acadêmica</p>
+    <h1 class="mt-2 font-display text-4xl font-bold text-ink">Novo professor</h1>
+    <section class="panel mt-6 p-6 sm:p-8">
+      <form class="grid gap-6 sm:grid-cols-2" (ngSubmit)="save()" #form="ngForm">
+        <label class="field-label">
+          Nome de usuário
+          <input class="field mt-2" name="userName" [(ngModel)]="model.userName" minlength="3" maxlength="100" required />
+        </label>
+        <label class="field-label">
+          E-mail
+          <input class="field mt-2" type="email" name="email" [(ngModel)]="model.email" required />
+        </label>
+        <label class="field-label">
+          Senha
+          <input class="field mt-2" type="password" name="password" [(ngModel)]="model.password" minlength="6" required />
+        </label>
+        <label class="field-label sm:col-span-2">
+          Formatos de estudo que leciona
+          <select class="field mt-2 min-h-32" name="formatIds" [(ngModel)]="model.formatIds" multiple required>
+            <option *ngFor="let format of formats" [ngValue]="format.id">{{ format.name }}</option>
+          </select>
+          <span class="mt-1 block text-xs font-medium text-slate-500">Use Ctrl ou Command para selecionar mais de um formato.</span>
+        </label>
+        <div class="sm:col-span-2">
+          <app-api-errors [errors]="errors"></app-api-errors>
+          <div class="mt-4 flex justify-end gap-3 border-t border-line pt-6">
+            <a routerLink="/courses" class="btn-secondary">Cancelar</a>
+            <button class="btn-primary" [disabled]="form.invalid || loading">{{ loading ? 'Salvando...' : 'Salvar professor' }}</button>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+</main>

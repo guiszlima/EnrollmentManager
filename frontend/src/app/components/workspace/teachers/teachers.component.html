@@ -1,0 +1,20 @@
+<section class="panel">
+  <div class="panel-heading"><div><h2>Professores</h2><p>Consulte os formatos que cada professor leciona.</p></div><a routerLink="/teachers/new" class="btn-primary">+ Novo professor</a></div>
+  <div class="mb-5 grid gap-3 px-4 sm:grid-cols-3 sm:px-5">
+    <input class="field" [(ngModel)]="filters.name" (ngModelChange)="applyFilters()" placeholder="Nome" />
+    <input class="field" [(ngModel)]="filters.email" (ngModelChange)="applyFilters()" placeholder="E-mail" type="email" />
+    <select class="field" [(ngModel)]="filters.studyFormatId" (ngModelChange)="applyFilters()">
+      <option [ngValue]="0">Todos os formatos</option>
+      <option *ngFor="let format of formats" [ngValue]="format.id">{{ format.name }}</option>
+    </select>
+  </div>
+  <app-api-errors [errors]="errors"></app-api-errors>
+  <div *ngIf="loading" class="loading">Carregando professores...</div>
+  <div *ngIf="!loading && teachers.length" class="divide-y divide-line">
+    <article *ngFor="let teacher of teachers" class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div><h3 class="font-bold text-ink">{{ teacher.userName }}</h3><p class="mt-1 text-sm text-slate-500">{{ teacher.email }}</p><p class="mt-2 text-xs font-semibold text-forest">{{ formatNames(teacher) }}</p></div>
+      <a class="table-action" [routerLink]="['/teachers', teacher.userId, 'edit']">Editar</a>
+    </article>
+  </div>
+  <div *ngIf="!loading && !teachers.length" class="empty-state">Nenhum professor cadastrado.</div>
+</section>
