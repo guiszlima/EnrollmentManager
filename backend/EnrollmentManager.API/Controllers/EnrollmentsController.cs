@@ -59,6 +59,16 @@ public class EnrollmentsController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet]
+    public async Task<ActionResult<ApiResponseDto<List<EnrollmentResponseDTO>>>> GetAll(
+        CancellationToken cancellationToken)
+    {
+        if (!IsStaff())
+            return Forbid();
+
+        return Ok(await _service.GetAllAsync(cancellationToken));
+    }
+
     [HttpGet("student/{studentId:int}")]
     public async Task<ActionResult<ApiResponseDto<List<EnrollmentResponseDTO>>>> GetByStudent(
         int studentId,

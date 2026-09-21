@@ -31,10 +31,13 @@ public class Student
     [MaxLength(200)] 
     public string Address { get; set; } = string.Empty;
     
-    [Required] 
+    
     [MaxLength(50)] 
-    public string RegistrationNumber { get; set; } = string.Empty;
+    public string? RegistrationNumber { get; set; } = string.Empty;
 
     // Propriedade de navegação
     public User User { get; set; } = null!;
+
+    public ICollection<StudentStudyFormat> AllowedFormats { get; set; }
+        = new List<StudentStudyFormat>();
 }

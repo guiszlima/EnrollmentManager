@@ -25,9 +25,13 @@ public class User
     public int? RoleId { get; set; }
 
     [ForeignKey(nameof(RoleId))]
-    public Role? Role { get; set; } 
+    public Role? Role { get; set; }
 
     public bool IsActive { get; set; }
+
+    public Student? Student { get; set; }
+
+    public Teacher? Teacher { get; set; }
 
     public ICollection<PasswordResetToken> PasswordResetTokens { get; set; }
         = new List<PasswordResetToken>();

@@ -50,7 +50,9 @@ public class AdminController : ControllerBase
         var response = await _adminService.DeleteUserAsync(id);
 
         if (response.Errors is { Count: > 0 })
-            return NotFound(response);
+            return response.Errors.Contains("Usuário não encontrado.")
+                ? NotFound(response)
+                : BadRequest(response);
 
         return Ok(response);
     }

@@ -6,6 +6,7 @@ namespace EnrollmentManager.API.Models
 {
     public class Course
     {
+        
         [Key]
         public int Id { get; set; }
 
@@ -24,14 +25,23 @@ namespace EnrollmentManager.API.Models
 
         [ForeignKey(nameof(EducationLevelId))]
         public EducationLevel EducationLevel { get; set; } = null!;
-        
+
         [Required]
         public int CourseStatusId { get; set; }
+
+        public int TotalSlots { get; set; }
+        public int AvailableSlots { get; set; }
 
         [ForeignKey(nameof(CourseStatusId))]
         public CourseStatus CourseStatus { get; set; } = null!;
 
-        // Formatos em que este curso está disponível (via tabela de junção)
-        public ICollection<CourseStudyFormat> AllowedFormats { get; set; } = new List<CourseStudyFormat>();
+        public ICollection<CourseStudyFormat> AllowedFormats { get; set; }
+            = new List<CourseStudyFormat>();
+
+        public ICollection<CourseTeacher> CourseTeachers { get; set; }
+            = new List<CourseTeacher>();
+
+        public ICollection<Enrollment> Enrollments { get; set; }
+            = new List<Enrollment>();
     }
 }

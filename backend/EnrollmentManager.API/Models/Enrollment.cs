@@ -45,6 +45,8 @@ public class Enrollment
     // Mantido pelo serviço a partir do código do status. Permite ao PostgreSQL
     // garantir que não existam matrículas simultaneamente ativas.
     public bool IsActiveEnrollment { get; set; }
+
+    public bool ConsumesSeat { get; set; } = true;
     
     
     public void ApplyStatusChange(EnrollmentStatus targetStatus, string approvedCode, string completedCode)

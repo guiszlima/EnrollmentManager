@@ -3,6 +3,7 @@ using System;
 using EnrollmentManager.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,13 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EnrollmentManager.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913142429_AddStudentStudyFormat")]
+    partial class AddStudentStudyFormat
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -29,9 +32,6 @@ namespace EnrollmentManager.API.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AvailableSlots")
-                        .HasColumnType("integer");
 
                     b.Property<int>("CourseStatusId")
                         .HasColumnType("integer");
@@ -46,9 +46,6 @@ namespace EnrollmentManager.API.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<int>("TotalSlots")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -237,9 +234,6 @@ namespace EnrollmentManager.API.Migrations
                     b.Property<DateTime?>("CompletionDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("ConsumesSeat")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("CourseId")
                         .HasColumnType("integer");
 
@@ -418,6 +412,12 @@ namespace EnrollmentManager.API.Migrations
                             Id = 4,
                             Code = "TEACHER",
                             Name = "Teacher"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Code = "PARENT",
+                            Name = "Parent"
                         });
                 });
 

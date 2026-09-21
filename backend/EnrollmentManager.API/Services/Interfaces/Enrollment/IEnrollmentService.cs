@@ -21,4 +21,7 @@ public interface IEnrollmentService
     Task<ApiResponseDto<List<EnrollmentResponseDTO>>> GetByStudentAsync(
         int studentId,
         CancellationToken cancellationToken = default);
+
+    Task<ApiResponseDto<List<EnrollmentResponseDTO>>> GetAllAsync(
+        CancellationToken cancellationToken = default);
 }
