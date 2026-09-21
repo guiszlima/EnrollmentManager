@@ -23,6 +23,6 @@ public class StudentUpdateDto
     [Required, StringLength(200, MinimumLength = 5, ErrorMessage = "O endereço deve ter entre 5 e 200 caracteres.")]
     public string Address { get; init; } = string.Empty;
 
-    [Required, StringLength(50, MinimumLength = 2, ErrorMessage = "O número de matrícula deve ter entre 2 e 50 caracteres.")]
-    public string RegistrationNumber { get; init; } = string.Empty;
+    [MinLength(1, ErrorMessage = "É necessário informar pelo menos um formato de estudo.")]
+    public List<int> FormatIds { get; init; } = new();
 }

@@ -13,11 +13,25 @@ public class CourseService : ICourseService
 
     public CourseService(ApplicationDbContext context) => _context = context;
 
-    public async Task<List<CourseResponseDto>> GetAllAsync() =>
-        await _context.Courses
+    public async Task<List<CourseResponseDto>> GetAllAsync(CourseFilterDto filter)
+    {
+        var query = _context.Courses.AsNoTracking().AsQueryable();
+
+        if (filter.CourseTypeId.HasValue)
+            query = query.Where(course => course.CourseTypeId == filter.CourseTypeId.Value);
+        if (filter.EducationLevelId.HasValue)
+            query = query.Where(course => course.EducationLevelId == filter.EducationLevelId.Value);
+        if (filter.StatusId.HasValue)
+            query = query.Where(course => course.CourseStatusId == filter.StatusId.Value);
+        if (filter.FormatIds.Count > 0)
+            query = query.Where(course => filter.FormatIds.All(formatId =>
+                course.AllowedFormats.Any(format => format.FormatId == formatId)));
+
+        return await query
             .AsNoTracking()
             .Select(ProjectToDto())
             .ToListAsync();
+    }
 
     public async Task<CourseResponseDto?> GetByIdAsync(int id) =>
         await _context.Courses
@@ -29,15 +43,21 @@ public class CourseService : ICourseService
     public async Task<CourseResponseDto?> CreateAsync(CourseInputDto dto)
     {
         if (!await HasValidClassificationsAsync(dto))
-            return null;
+            throw new CourseValidationException("Classificações do curso inválidas.");
+
+        await ValidateRelationsAsync(dto);
 
         var course = new Course
         {
             Name = dto.Name,
             CourseTypeId = dto.CourseTypeId,
             EducationLevelId = dto.EducationLevelId,
-            CourseStatusId = dto.CourseStatusId
+            CourseStatusId = dto.CourseStatusId,
+            TotalSlots = dto.TotalSlots,
+            AvailableSlots = dto.TotalSlots
         };
+
+        AddRelations(course, dto);
 
         _context.Courses.Add(course);
 
@@ -54,17 +74,31 @@ public class CourseService : ICourseService
 
     public async Task<CourseResponseDto?> UpdateAsync(int id, CourseInputDto dto)
     {
-        var course = await _context.Courses.FirstOrDefaultAsync(c => c.Id == id);
+        var course = await _context.Courses
+            .Include(current => current.AllowedFormats)
+            .Include(current => current.CourseTeachers)
+            .FirstOrDefaultAsync(current => current.Id == id);
         if (course is null)
             return null;
 
         if (!await HasValidClassificationsAsync(dto))
-            return null;
+            throw new CourseValidationException("Curso não encontrado ou classificações inválidas.");
+
+        await ValidateRelationsAsync(dto);
 
         course.Name = dto.Name;
         course.CourseTypeId = dto.CourseTypeId;
         course.EducationLevelId = dto.EducationLevelId;
         course.CourseStatusId = dto.CourseStatusId;
+        var usedSlots = course.TotalSlots - course.AvailableSlots;
+        if (dto.TotalSlots < usedSlots)
+            throw new CourseValidationException("O limite de vagas não pode ser menor que as matrículas existentes.");
+
+        course.TotalSlots = dto.TotalSlots;
+        course.AvailableSlots = dto.TotalSlots - usedSlots;
+        course.AllowedFormats.Clear();
+        course.CourseTeachers.Clear();
+        AddRelations(course, dto);
 
         try
         {
@@ -99,7 +133,25 @@ public class CourseService : ICourseService
         EducationLevelId = c.EducationLevelId,
         EducationLevelName = c.EducationLevel.Name,
         StatusId = c.CourseStatusId,
-        StatusName = c.CourseStatus.Name
+        StatusName = c.CourseStatus.Name,
+        FormatIds = c.AllowedFormats.Select(format => format.FormatId).ToList(),
+        TeacherIds = c.CourseTeachers.Select(teacher => teacher.TeacherId).ToList(),
+        TotalSlots = c.TotalSlots,
+        AvailableSlots = c.AvailableSlots,
+        EnrollmentCount = c.Enrollments.Count(enrollment => enrollment.ConsumesSeat),
+        Enrollments = c.Enrollments.Select(enrollment => new CourseEnrollmentDto
+        {
+            Id = enrollment.Id,
+            StudentId = enrollment.StudentId,
+            StudentName = enrollment.Student.User.UserName,
+            StudentEmail = enrollment.Student.User.Email,
+            RegistrationNumber = enrollment.Student.RegistrationNumber ?? string.Empty,
+            FormatId = enrollment.FormatId,
+            FormatName = enrollment.Format.Name,
+            StatusId = enrollment.StatusId,
+            StatusName = enrollment.Status.Name,
+            EnrollmentDate = enrollment.EnrollmentDate
+        }).ToList()
     };
 
     // Validação otimizada em uma única consulta SQL
@@ -111,5 +163,46 @@ public class CourseService : ICourseService
             .CountAsync();
 
         return validCount == 3;
+    }
+
+    private async Task ValidateRelationsAsync(CourseInputDto dto)
+    {
+        var formatIds = dto.FormatIds.Distinct().ToList();
+        if (formatIds.Count == 0)
+            throw new CourseValidationException("É necessário informar pelo menos um formato de estudo.");
+
+        var existingFormatCount = await _context.StudyFormats
+            .CountAsync(format => formatIds.Contains(format.Id));
+
+        if (existingFormatCount != formatIds.Count)
+            throw new CourseValidationException("Um ou mais formatos do curso não existem.");
+
+        var teacherIds = dto.TeacherIds.Distinct().ToList();
+        if (teacherIds.Count == 0)
+            return;
+
+        var teachers = await _context.Teachers
+            .Where(teacher => teacherIds.Contains(teacher.UserId))
+            .Select(teacher => new
+            {
+                teacher.UserId,
+                FormatIds = teacher.AllowedFormats.Select(format => format.FormatId).ToList()
+            })
+            .ToListAsync();
+
+        if (teachers.Count != teacherIds.Count ||
+            teachers.Any(teacher => formatIds.Any(formatId => !teacher.FormatIds.Contains(formatId))))
+        {
+            throw new CourseValidationException("Professor não tem disponiblidade para lecionar curso");
+        }
+    }
+
+    private static void AddRelations(Course course, CourseInputDto dto)
+    {
+        foreach (var formatId in dto.FormatIds.Distinct())
+            course.AllowedFormats.Add(new CourseStudyFormat { Course = course, FormatId = formatId });
+
+        foreach (var teacherId in dto.TeacherIds.Distinct())
+            course.CourseTeachers.Add(new CourseTeacher { Course = course, TeacherId = teacherId });
     }
 }

@@ -1,26 +1,26 @@
+using EnrollmentManager.API.Configurations;
 using EnrollmentManager.API.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EnrollmentManager.API.Data.Seeders;
 
 public static class AdminSeeder
 {
     public static async Task SeedAsync(
-        ApplicationDbContext context,
-        IConfiguration configuration,
-        IPasswordHasher<User> passwordHasher)
+    ApplicationDbContext context,
+    IOptions<AdminConfiguration> adminConfiguration,
+    IPasswordHasher<User> passwordHasher)
     {
-        var adminEmail = configuration["ADMIN:EMAIL"];
-        var adminPassword = configuration["ADMIN:PASSWORD"];
+        var adminEmail = adminConfiguration.Value.Email;
+        var adminPassword = adminConfiguration.Value.Password;
 
         if (string.IsNullOrWhiteSpace(adminEmail))
-            throw new InvalidOperationException(
-                "Admin email is not configured.");
+            throw new InvalidOperationException("Admin email is not configured.");
 
         if (string.IsNullOrWhiteSpace(adminPassword))
-            throw new InvalidOperationException(
-                "Admin password is not configured.");
+            throw new InvalidOperationException("Admin password is not configured.");
 
         var adminRole = await context.Roles
             .SingleOrDefaultAsync(x => x.Name == "Admin");
@@ -30,11 +30,18 @@ public static class AdminSeeder
                 "Admin role was not found. Run the reference data seed first.");
 
         var existingAdmin = await context.Users
-            .SingleOrDefaultAsync(x => x.Email == adminEmail);
+            .SingleOrDefaultAsync(x => x.UserName == "Administrator");
 
         if (existingAdmin is not null)
-            throw new InvalidOperationException(
-                "Admin already exists.");
+        {
+            existingAdmin.Email = adminEmail;
+            existingAdmin.RoleId = adminRole.Id;
+            existingAdmin.IsActive = true;
+
+            await context.SaveChangesAsync();
+
+            return;
+        }
 
         var admin = new User
         {
@@ -46,8 +53,7 @@ public static class AdminSeeder
 
         admin.PasswordHash = passwordHasher.HashPassword(
             admin,
-            adminPassword
-        );
+            adminPassword);
 
         context.Users.Add(admin);
 

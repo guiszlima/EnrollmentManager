@@ -32,14 +32,17 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<ApiResponseDto<string>>> Login([FromBody] LoginUserDto dto)
+    public async Task<ActionResult<ApiResponseDto<string>>> Login(
+    [FromBody] LoginUserDto dto)
     {
         var response = await _authService.LoginAsync(dto);
 
+        Console.WriteLine($"DATA: {response.Data}");
+        Console.WriteLine($"MESSAGE: {response.Message}");
+        Console.WriteLine($"ERRORS: {string.Join(" | ", response.Errors)}");
+
         if (response.Errors is { Count: > 0 })
-        {
             return Unauthorized(response);
-        }
 
         return Ok(response);
     }

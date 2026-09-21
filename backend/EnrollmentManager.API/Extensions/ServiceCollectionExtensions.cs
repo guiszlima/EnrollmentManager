@@ -12,13 +12,17 @@ using EnrollmentManager.API.Services.Interfaces.Course;
 using EnrollmentManager.API.Services.Interfaces.Enrollment;
 using EnrollmentManager.API.Services.Interfaces.Role;
 using EnrollmentManager.API.Services.Interfaces.Student;
+using EnrollmentManager.API.Services.Interfaces.StudyFormat;
 using EnrollmentManager.API.Services.Roles;
 using EnrollmentManager.API.Services.Students;
+using EnrollmentManager.API.Services.StudyFormat;
+using EnrollmentManager.API.Services.Interfaces.Teacher;
+using EnrollmentManager.API.Services.Teachers;
 using Microsoft.AspNetCore.Identity;
 
 namespace EnrollmentManager.API.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions 
 {
     public static IServiceCollection AddApplicationServices(
         this IServiceCollection services)
@@ -32,6 +36,8 @@ public static class ServiceCollectionExtensions
             .AddCatalogServices()
             .AddCourseServices()
             .AddEnrollmentServices();
+        services.AddScoped<ITeacherService, TeacherService>();
+        services.AddScoped<ICourseReportService, CourseReportService>();
 
         return services;
     }
@@ -84,8 +90,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ICourseTypeService, CourseTypeService>();
         services.AddScoped<IEducationLevelService, EducationLevelService>();
-        services.AddScoped<IEnrollmentStatusService, EnrollmentStatusService>();
+        services.AddScoped<IEnrollmentStatusService, EnrollmentManager.API.Services.Catalogs.EnrollmentStatusService>();
         services.AddScoped<ICourseStudyFormatService, CourseStudyFormatService>();
+        services.AddScoped<IStudyFormatService, StudyFormatService>();
 
         return services;
     }
@@ -102,6 +109,9 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddEnrollmentServices(
         this IServiceCollection services)
     {
+        services.AddScoped<EnrollmentCreationService>();
+        services.AddScoped<EnrollmentManager.API.Services.Enrollments.EnrollmentStatusService>();
+        services.AddScoped<EnrollmentQueryService>();
         services.AddScoped<IEnrollmentService, EnrollmentService>();
 
         return services;

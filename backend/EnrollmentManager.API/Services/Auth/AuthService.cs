@@ -25,19 +25,63 @@ public class AuthService : IAuthService
 
     public async Task<ApiResponseDto<string>> RegisterAsync(RegisterUserDto dto)
     {
+        var response = await CreateUserAsync(dto, isActive: false, roleCode: null);
 
-        bool emailExists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
-        if (emailExists)
+        return response.Errors.Count > 0
+            ? ApiResponseDto<string>.Error(response.Errors[0])
+            : new ApiResponseDto<string> { Message = "Usuário registrado com sucesso." };
+    }
+
+    public async Task<ApiResponseDto<int>> RegisterStudentAsync(RegisterUserDto dto)
+    {
+        var response = await CreateUserAsync(dto, isActive: true, roleCode: "STUDENT");
+
+        if (response.Errors.Count > 0 || response.Data is null)
+            return ApiResponseDto<int>.Error(response.Errors.FirstOrDefault() ?? "Não foi possível criar o usuário.");
+
+        return new ApiResponseDto<int>
         {
-            return ApiResponseDto<string>.Error("O e-mail já está em uso.");
+            Data = response.Data.Id,
+            Message = "Aluno criado com sucesso."
+        };
+    }
+
+    public async Task<ApiResponseDto<int>> RegisterTeacherAsync(RegisterUserDto dto)
+    {
+        var response = await CreateUserAsync(dto, isActive: true, roleCode: "TEACHER");
+
+        if (response.Errors.Count > 0 || response.Data is null)
+            return ApiResponseDto<int>.Error(response.Errors.FirstOrDefault() ?? "Não foi possível criar o usuário.");
+
+        return new ApiResponseDto<int>
+        {
+            Data = response.Data.Id,
+            Message = "Usuário professor criado com sucesso."
+        };
+    }
+
+    private async Task<ApiResponseDto<User>> CreateUserAsync(
+        RegisterUserDto dto,
+        bool isActive,
+        string? roleCode)
+    {
+        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+            return ApiResponseDto<User>.Error("O e-mail já está em uso.");
+
+        Role? role = null;
+        if (roleCode is not null)
+        {
+            role = await _context.Roles.FirstOrDefaultAsync(r => r.Code == roleCode);
+            if (role is null)
+                return ApiResponseDto<User>.Error("Cargo de aluno não encontrado.");
         }
 
         var user = new User
         {
             UserName = dto.UserName,
             Email = dto.Email,
-
-
+            Role = role,
+            IsActive = isActive
         };
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
@@ -48,10 +92,10 @@ public class AuthService : IAuthService
         }
         catch (DbUpdateException)
         {
-            return ApiResponseDto<string>.Error("O e-mail já está em uso.");
+            return ApiResponseDto<User>.Error("O e-mail já está em uso.");
         }
 
-        return new ApiResponseDto<string> { Message = "Usuário registrado com sucesso." };
+        return new ApiResponseDto<User> { Data = user };
     }
 
 

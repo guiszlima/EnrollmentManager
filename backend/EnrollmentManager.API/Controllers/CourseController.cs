@@ -1,9 +1,11 @@
 using EnrollmentManager.API.Constants;
 using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.DTOs.Course;
+using EnrollmentManager.API.DTOs.CourseReport;
 using EnrollmentManager.API.Services.Interfaces.Course;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using EnrollmentManager.API.Services.Courses;
 
 namespace EnrollmentManager.API.Controllers;
 
@@ -13,12 +15,17 @@ namespace EnrollmentManager.API.Controllers;
 public class CourseController : ControllerBase
 {
     private readonly ICourseService _service;
+    private readonly ICourseReportService _reportService;
 
-    public CourseController(ICourseService service) => _service = service;
+    public CourseController(ICourseService service, ICourseReportService reportService)
+    {
+        _service = service;
+        _reportService = reportService;
+    }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponseDto<List<CourseResponseDto>>>> GetAll() =>
-        Ok(new ApiResponseDto<List<CourseResponseDto>> { Data = await _service.GetAllAsync() });
+    public async Task<ActionResult<ApiResponseDto<List<CourseResponseDto>>>> GetAll([FromQuery] CourseFilterDto filter) =>
+        Ok(new ApiResponseDto<List<CourseResponseDto>> { Data = await _service.GetAllAsync(filter) });
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ApiResponseDto<CourseResponseDto>>> GetById(int id)
@@ -29,24 +36,49 @@ public class CourseController : ControllerBase
             : Ok(new ApiResponseDto<CourseResponseDto> { Data = course });
     }
 
+    [HttpGet("{id:int}/report")]
+    public async Task<ActionResult<ApiResponseDto<CourseReportDto>>> Report(
+        int id,
+        [FromQuery] CourseReportFilterDto filter)
+    {
+        var report = await _reportService.GetAsync(id, filter);
+        return report is null
+            ? NotFound(ApiResponseDto<CourseReportDto>.Error("Curso não encontrado."))
+            : Ok(new ApiResponseDto<CourseReportDto> { Data = report });
+    }
+
     [HttpPost]
     [Authorize(Roles = Roles.Staff)]
     public async Task<ActionResult<ApiResponseDto<CourseResponseDto>>> Create(CourseInputDto dto)
     {
-        var course = await _service.CreateAsync(dto);
-        return course is null
-            ? BadRequest(ApiResponseDto<CourseResponseDto>.Error("Classificações do curso inválidas."))
-            : CreatedAtAction(nameof(GetById), new { id = course.Id }, new ApiResponseDto<CourseResponseDto> { Data = course });
+        try
+        {
+            var course = await _service.CreateAsync(dto);
+            return course is null
+                ? BadRequest(ApiResponseDto<CourseResponseDto>.Error("Não foi possível criar o curso."))
+                : CreatedAtAction(nameof(GetById), new { id = course.Id }, new ApiResponseDto<CourseResponseDto> { Data = course });
+        }
+        catch (CourseValidationException exception)
+        {
+            return BadRequest(ApiResponseDto<CourseResponseDto>.Error(exception.Message));
+        }
     }
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponseDto<CourseResponseDto>>> Update(int id, CourseInputDto dto)
     {
-        var course = await _service.UpdateAsync(id, dto);
-        return course is null
-            ? BadRequest(ApiResponseDto<CourseResponseDto>.Error("Curso não encontrado ou classificações inválidas."))
-            : Ok(new ApiResponseDto<CourseResponseDto> { Data = course });
+        try
+        {
+            var course = await _service.UpdateAsync(id, dto);
+            return course is null
+                ? BadRequest(ApiResponseDto<CourseResponseDto>.Error("Curso não encontrado."))
+                : Ok(new ApiResponseDto<CourseResponseDto> { Data = course });
+        }
+        catch (CourseValidationException exception)
+        {
+            return BadRequest(ApiResponseDto<CourseResponseDto>.Error(exception.Message));
+        }
     }
 
     [HttpDelete("{id:int}")]

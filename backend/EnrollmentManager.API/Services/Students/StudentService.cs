@@ -16,9 +16,22 @@ public class StudentService : IStudentService
         _context = context;
     }
 
-    public async Task<List<StudentResponseDto>> GetAllAsync()
+    public async Task<List<StudentResponseDto>> GetAllAsync(StudentFilterDto filter)
     {
-        return await _context.Students
+        var query = _context.Students.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter.Name))
+            query = query.Where(student => student.User.UserName.Contains(filter.Name));
+        if (!string.IsNullOrWhiteSpace(filter.Email))
+            query = query.Where(student => student.User.Email.Contains(filter.Email));
+        if (!string.IsNullOrWhiteSpace(filter.RegistrationNumber))
+            query = query.Where(student => student.RegistrationNumber.Contains(filter.RegistrationNumber));
+        if (!string.IsNullOrWhiteSpace(filter.Nationality))
+            query = query.Where(student => student.Nationality != null && student.Nationality.Contains(filter.Nationality));
+        if (!string.IsNullOrWhiteSpace(filter.Phone))
+            query = query.Where(student => student.Phone.Contains(filter.Phone));
+
+        return await query
             .AsNoTracking()
             .Select(student => new StudentResponseDto
             {
@@ -31,7 +44,10 @@ public class StudentService : IStudentService
                 BirthDate = student.BirthDate,
                 Phone = student.Phone,
                 Address = student.Address,
-                RegistrationNumber = student.RegistrationNumber
+                RegistrationNumber = student.RegistrationNumber,
+                FormatIds = student.AllowedFormats
+                    .Select(format => format.FormatId)
+                    .ToList()
             })
             .ToListAsync();
     }
@@ -52,7 +68,10 @@ public class StudentService : IStudentService
                 BirthDate = student.BirthDate,
                 Phone = student.Phone,
                 Address = student.Address,
-                RegistrationNumber = student.RegistrationNumber
+                RegistrationNumber = student.RegistrationNumber,
+                FormatIds = student.AllowedFormats
+                    .Select(format => format.FormatId)
+                    .ToList()
             })
             .FirstOrDefaultAsync();
     }
@@ -62,9 +81,17 @@ public class StudentService : IStudentService
         if (!ValidateNationalityAndDocuments(dto.Nationality, dto.Cpf, dto.PassportNumber))
             return ApiResponseDto<StudentResponseDto>.Error("Documento de identificação inválido para a nacionalidade informada.");
 
-        bool userExists = await _context.Users.AnyAsync(user => user.Id == dto.UserId);
-        if (!userExists)
+        var user = await _context.Users
+      .Include(u => u.Role)
+      .FirstOrDefaultAsync(u => u.Id == dto.UserId);
+
+        if (user == null)
             return ApiResponseDto<StudentResponseDto>.Error("Usuário não encontrado no sistema.");
+
+        
+        if (user.Role?.Code != "STUDENT")
+            return ApiResponseDto<StudentResponseDto>
+                .Error("O usuário não possui o cargo de aluno.");
 
         bool hasStudentProfile = await _context.Students.AnyAsync(student => student.UserId == dto.UserId);
         if (hasStudentProfile)
@@ -73,21 +100,31 @@ public class StudentService : IStudentService
         bool isBr = IsBrazilian(dto.Nationality);
         string? cleanCpf = isBr ? dto.Cpf : null;
         string? cleanPassport = isBr ? null : dto.PassportNumber;
+        DateTime BirthDateUtc = DateTime.SpecifyKind(dto.BirthDate, DateTimeKind.Utc);
+        string registrationNumber = GenerateRegistrationNumber();
 
-        if (await HasDuplicateDocumentOrRegistrationAsync(cleanCpf, cleanPassport, dto.RegistrationNumber))
+        if (await HasDuplicateDocumentOrRegistrationAsync(cleanCpf, cleanPassport, registrationNumber))
             return ApiResponseDto<StudentResponseDto>.Error("Já existe um aluno cadastrado com esta Matrícula, CPF ou Passaporte.");
 
+        if (!dto.FormatIds.Any())
+            return ApiResponseDto<StudentResponseDto>.Error("É necessário informar pelo menos um formato de estudo.");
+
+        if (!await FormatsExistAsync(dto.FormatIds))
+            return ApiResponseDto<StudentResponseDto>.Error("Um ou mais formatos informados não existem.");
+        
         var student = new EnrollmentManager.API.Models.Student
         {
             UserId = dto.UserId,
             Cpf = cleanCpf,
             PassportNumber = cleanPassport,
             Nationality = dto.Nationality,
-            BirthDate = dto.BirthDate,
+            BirthDate = BirthDateUtc,
             Phone = dto.Phone,
             Address = dto.Address,
-            RegistrationNumber = dto.RegistrationNumber
+            RegistrationNumber = registrationNumber
         };
+
+        AddFormats(student, dto.FormatIds);
 
         _context.Students.Add(student);
         try
@@ -107,24 +144,35 @@ public class StudentService : IStudentService
         };
     }
 
-    public async Task<ApiResponseDto<StudentResponseDto>> UpdateAsync(int userId, StudentUpdateDto dto)
+    public async Task<ApiResponseDto<StudentResponseDto>> UpdateAsync(
+    int userId,
+    StudentUpdateDto dto)
     {
         var student = await _context.Students
             .Include(s => s.User)
+            .Include(s => s.AllowedFormats)
             .FirstOrDefaultAsync(current => current.UserId == userId);
 
         if (student is null)
-            return ApiResponseDto<StudentResponseDto>.Error("Aluno não encontrado.");
+            return ApiResponseDto<StudentResponseDto>.Error(
+                "Aluno não encontrado.");
 
-        if (!ValidateNationalityAndDocuments(dto.Nationality, dto.Cpf, dto.PassportNumber))
-            return ApiResponseDto<StudentResponseDto>.Error("Documento de identificação inválido para a nacionalidade informada.");
+        if (!ValidateNationalityAndDocuments(
+                dto.Nationality,
+                dto.Cpf,
+                dto.PassportNumber))
+        {
+            return ApiResponseDto<StudentResponseDto>.Error(
+                "Documento de identificação inválido para a nacionalidade informada.");
+        }
+
+        if (!dto.FormatIds.Any())
+            return ApiResponseDto<StudentResponseDto>.Error("É necessário informar pelo menos um formato de estudo.");
 
         bool isBr = IsBrazilian(dto.Nationality);
+
         string? cleanCpf = isBr ? dto.Cpf : null;
         string? cleanPassport = isBr ? null : dto.PassportNumber;
-
-        if (await HasDuplicateDocumentOrRegistrationAsync(cleanCpf, cleanPassport, dto.RegistrationNumber, userId))
-            return ApiResponseDto<StudentResponseDto>.Error("Já existe outro aluno cadastrado com esta Matrícula, CPF ou Passaporte.");
 
         student.Cpf = cleanCpf;
         student.PassportNumber = cleanPassport;
@@ -132,7 +180,12 @@ public class StudentService : IStudentService
         student.BirthDate = dto.BirthDate;
         student.Phone = dto.Phone;
         student.Address = dto.Address;
-        student.RegistrationNumber = dto.RegistrationNumber;
+
+        if (!await FormatsExistAsync(dto.FormatIds))
+            return ApiResponseDto<StudentResponseDto>.Error("Um ou mais formatos informados não existem.");
+
+        student.AllowedFormats.Clear();
+        AddFormats(student, dto.FormatIds);
 
         try
         {
@@ -140,17 +193,18 @@ public class StudentService : IStudentService
         }
         catch (DbUpdateException)
         {
-            return ApiResponseDto<StudentResponseDto>.Error("Erro inesperado ao atualizar os dados do aluno.");
+            return ApiResponseDto<StudentResponseDto>.Error(
+                "Erro inesperado ao atualizar os dados do aluno.");
         }
 
         var resultDto = await GetByIdAsync(student.UserId);
-        return new ApiResponseDto<StudentResponseDto> 
-        { 
-            Data = resultDto, 
-            Message = "Aluno atualizado com sucesso." 
+
+        return new ApiResponseDto<StudentResponseDto>
+        {
+            Data = resultDto,
+            Message = "Aluno atualizado com sucesso."
         };
     }
-
     public async Task<ApiResponseDto<bool>> DeleteAsync(int userId)
     {
         var student = await _context.Students
@@ -193,6 +247,11 @@ public class StudentService : IStudentService
         !string.IsNullOrWhiteSpace(nationality) &&
         nationality.Trim().Equals("Brasil", StringComparison.OrdinalIgnoreCase);
 
+
+    private static string GenerateRegistrationNumber()
+    {
+        return $"{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+    }
     private static bool ValidateNationalityAndDocuments(string? nationality, string? cpf, string? passportNumber)
     {
         if (string.IsNullOrWhiteSpace(nationality))
@@ -202,5 +261,32 @@ public class StudentService : IStudentService
             return !string.IsNullOrWhiteSpace(cpf);
 
         return !string.IsNullOrWhiteSpace(passportNumber);
+    }
+
+    private async Task<bool> FormatsExistAsync(IEnumerable<int> formatIds)
+    {
+        // O HashSet já remove os duplicados na criação e é mais rápido para buscas
+        var ids = formatIds.ToHashSet();
+
+        if (ids.Count == 0)
+            return false;
+
+        var existingCount = await _context.StudyFormats
+            .CountAsync(format => ids.Contains(format.Id));
+
+        return existingCount == ids.Count;
+    }
+
+    private static void AddFormats(Student student, IEnumerable<int> formatIds)
+    {
+        foreach (var formatId in formatIds.Distinct())
+        {
+            student.AllowedFormats.Add(new StudentStudyFormat
+            {
+                Student = student,
+                StudentId = student.UserId,
+                FormatId = formatId
+            });
+        }
     }
 }

@@ -31,9 +31,8 @@ public class StudentCreateDto
     [MaxLength(200)]
     public string Address { get; set; } = string.Empty;
 
-    [Required]
-    [MaxLength(50)]
-    public string RegistrationNumber { get; set; } = string.Empty;
+    [MinLength(1, ErrorMessage = "É necessário informar pelo menos um formato de estudo.")]
+    public List<int> FormatIds { get; set; } = new();
 
     private static string? CleanCpf(string? rawCpf)
     {

@@ -13,6 +13,8 @@ public static class ConfigurationExtensions
         );
         services.Configure<AppConfiguration>(
             configuration.GetSection("App"));
+        services.Configure<AdminConfiguration>(
+            configuration.GetSection("Admin"));
         return services;
     }
 }

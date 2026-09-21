@@ -13,5 +13,8 @@ namespace EnrollmentManager.API.Models
 
         // Propriedade de navegação: Uma modalidade pode estar associada a várias matrículas
         public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+
+        public ICollection<CourseStudyFormat> CourseStudyFormats { get; set; } = new List<CourseStudyFormat>();
+        public ICollection<StudentStudyFormat> StudentStudyFormats { get; set; } = new List<StudentStudyFormat>();
     }
 }

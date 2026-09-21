@@ -12,4 +12,5 @@ public class StudentResponseDto
     public string Phone { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
     public string RegistrationNumber { get; init; } = string.Empty;
+    public List<int> FormatIds { get; init; } = new();
 }

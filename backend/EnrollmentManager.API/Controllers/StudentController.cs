@@ -1,6 +1,8 @@
 using EnrollmentManager.API.DTOs.Common;
 using EnrollmentManager.API.DTOs.Student;
 using EnrollmentManager.API.Services.Interfaces.Student;
+using EnrollmentManager.API.Services.Interfaces.Auth;
+using EnrollmentManager.API.DTOs.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -13,21 +15,23 @@ namespace EnrollmentManager.API.Controllers;
 public class StudentController : ControllerBase
 {
     private readonly IStudentService _service;
+    private readonly IAuthService _authService;
 
-    public StudentController(IStudentService service)
+    public StudentController(IStudentService service, IAuthService authService)
     {
         _service = service;
+        _authService = authService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponseDto<List<StudentResponseDto>>>> GetAll()
+    public async Task<ActionResult<ApiResponseDto<List<StudentResponseDto>>>> GetAll([FromQuery] StudentFilterDto filter)
     {
-        if (!User.IsInRole("Admin"))
+        if (!User.IsInRole("Admin") && !User.IsInRole("Secretary"))
             return Forbid();
 
         return Ok(new ApiResponseDto<List<StudentResponseDto>>
         {
-            Data = await _service.GetAllAsync()
+            Data = await _service.GetAllAsync(filter)
         });
     }
 
@@ -45,8 +49,40 @@ public class StudentController : ControllerBase
         return Ok(new ApiResponseDto<StudentResponseDto> { Data = student });
     }
 
+    [HttpPost("with-user")]
+    public async Task<ActionResult<ApiResponseDto<StudentResponseDto>>> CreateUserWithStudentAsync(UserStudentCreateDto dto)
+    {
+        if (!User.IsInRole("Admin"))
+            return Forbid();
+
+        var userResponse = await _authService.RegisterStudentAsync(
+            new RegisterUserDto(dto.UserName, dto.Email, dto.Password));
+
+        if (userResponse.Errors is { Count: > 0 })
+            return BadRequest(userResponse);
+
+        var response = await _service.CreateAsync(new StudentCreateDto
+        {
+            UserId = userResponse.Data,
+            Cpf = dto.Cpf,
+            PassportNumber = dto.PassportNumber,
+            Nationality = dto.Nationality,
+            BirthDate = dto.BirthDate,
+            Phone = dto.Phone,
+            Address = dto.Address,
+            FormatIds = dto.FormatIds
+        });
+
+        if (response.Data is null)
+            return BadRequest(response);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { userId = response.Data.UserId },
+            response);
+    }
     [HttpPost]
-    public async Task<ActionResult<ApiResponseDto<StudentResponseDto>>> Create(StudentCreateDto dto)
+    public async Task<ActionResult<ApiResponseDto<StudentResponseDto>>> CreateAsync(StudentCreateDto dto)
     {
         if (!User.IsInRole("Admin"))
             return Forbid();

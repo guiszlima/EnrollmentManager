@@ -19,4 +19,11 @@ public record CourseInputDto
     [Required(ErrorMessage = "CourseStatusId is required.")]
     [Range(1, int.MaxValue, ErrorMessage = "CourseStatusId must be greater than zero.")]
     public int CourseStatusId { get; init; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "TotalSlots must be greater than zero.")]
+    public int TotalSlots { get; init; }
+
+    [MinLength(1, ErrorMessage = "É necessário informar pelo menos um formato de estudo.")]
+    public List<int> FormatIds { get; init; } = new();
+    public List<int> TeacherIds { get; init; } = new();
 }
