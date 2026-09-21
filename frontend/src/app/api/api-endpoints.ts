@@ -1,0 +1,16 @@
+export const apiEndpoints = {
+  auth: '/api/Auth',
+  adminUsers: '/api/admin/users',
+  users: '/api/users',
+  roles: '/api/roles',
+  courses: '/api/courses',
+  students: '/api/students',
+  teachers: '/api/teachers',
+  enrollments: '/api/enrollments',
+  courseTypes: '/api/course-types',
+  educationLevels: '/api/education-levels',
+  courseStatuses: '/api/course-statuses',
+  enrollmentStatuses: '/api/enrollment-statuses',
+  courseStudyFormats: '/api/course-study-formats',
+  studyFormats: '/api/study-formats',
+} as const;
